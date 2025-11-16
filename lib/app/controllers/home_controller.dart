@@ -1,94 +1,81 @@
+// File: app/controllers/home_controller.dart
 import 'package:get/get.dart';
+// IMPORT SupabaseProvider
+import '../providers/supabase_provider.dart';
 
 class HomeController extends GetxController {
-  var obat = <Map<String, dynamic>>[].obs;
-  var hasil = <Map<String, dynamic>>[].obs;
-  var rekomendasi = <Map<String, dynamic>>[].obs;
+  // TAMBAHKAN isLoading untuk status loading
+  var isLoading = true.obs;
+
+  // UBAH nama variabel agar lebih jelas
+  var masterObatList = <Map<String, dynamic>>[].obs;
+  var filteredObatList = <Map<String, dynamic>>[].obs;
+  var rekomendasiList = <Map<String, dynamic>>[].obs;
+
+  // DAPATKAN Supabase client
+  final supabase = SupabaseProvider.client;
 
   @override
   void onInit() {
     super.onInit();
-
-    obat.value = [
-      {
-        'nama': 'Paracetamol',
-        'harga': 5000,
-        'stok': 20,
-        'kategori': 'Demam',
-        'deskripsi': 'Pereda demam dan nyeri.',
-      },
-      {
-        'nama': 'Paracetamol 3',
-        'harga': 7000,
-        'stok': 15,
-        'kategori': 'Demam',
-        'deskripsi': 'Pereda demam dan nyeri.',
-      },
-      {
-        'nama': 'OBH Combi',
-        'harga': 7000,
-        'stok': 12,
-        'kategori': 'Batuk',
-        'deskripsi': 'Obat batuk berdahak.',
-      },
-      {
-        'nama': 'Vitamin C',
-        'harga': 8000,
-        'stok': 15,
-        'kategori': 'Suplemen',
-        'deskripsi': 'Menjaga daya tahan tubuh.',
-      },
-      {
-        'nama': 'Amoxicillin',
-        'harga': 12000,
-        'stok': 10,
-        'kategori': 'Antibiotik',
-        'deskripsi': 'Antibiotik untuk infeksi bakteri.',
-      },
-      {
-        'nama': 'Minyak Kayu Putih',
-        'harga': 9000,
-        'stok': 20,
-        'kategori': 'Suplemen',
-        'deskripsi': 'Penghangat tubuh.',
-      },
-      {
-        'nama': 'Betadine',
-        'harga': 5000,
-        'stok': 30,
-        'kategori': 'Luka',
-        'deskripsi': 'Antiseptik untuk luka.',
-      },
-    ];
-
-    cari('');
+    // GANTI isi onInit
+    // Kita tidak isi data statis, kita panggil fetchObat
+    fetchObat();
   }
 
+  // BUAT fungsi baru untuk mengambil data
+  Future<void> fetchObat() async {
+    try {
+      isLoading.value = true;
+      rekomendasiList.clear(); // Bersihkan rekomendasi saat refresh
+
+      // Ambil data dari tabel 'obat' kamu
+      final response = await supabase
+          .from('obat')
+          .select('id, nama, kategori, harga, stok, deskripsi');
+
+      // Masukkan data dari Supabase ke master list
+      masterObatList.value = List<Map<String, dynamic>>.from(response);
+
+      // Panggil 'cari' dengan string kosong untuk menampilkan semua data
+      cari('');
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal mengambil data obat: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // SESUAIKAN fungsi cari
   void cari(String keyword) {
-    hasil.clear();
-    rekomendasi.clear();
+    filteredObatList.clear();
+    rekomendasiList.clear();
 
     if (keyword.isEmpty) {
-      hasil.assignAll(obat);
+      filteredObatList.assignAll(masterObatList);
       return;
     }
 
-    final cocok = obat
+    final cocok = masterObatList
         .where((o) =>
             o['nama'].toLowerCase().contains(keyword.toLowerCase()))
         .toList();
 
-    hasil.assignAll(cocok);
+    filteredObatList.assignAll(cocok);
 
     if (cocok.isNotEmpty) {
       final kategori = cocok.first['kategori'];
-      final serupa = obat
+      final serupa = masterObatList
           .where((o) =>
               o['kategori'] == kategori &&
               !o['nama'].toLowerCase().contains(keyword.toLowerCase()))
           .toList();
 
-      rekomendasi.assignAll(serupa);
+      rekomendasiList.assignAll(serupa);
     }
   }
 }

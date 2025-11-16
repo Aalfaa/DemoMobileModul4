@@ -1,3 +1,4 @@
+// File: app/views/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
@@ -9,7 +10,9 @@ import '../controllers/auth_controller.dart';
 class HomePage extends StatelessWidget {
   HomePage({super.key});
 
-  final HomeController c = Get.put(HomeController());
+  // 1. GANTI Get.put() menjadi Get.find()
+  //    Karena controller sekarang dibuat oleh HomeBinding
+  final HomeController c = Get.find<HomeController>();
   final ThemeService themeService = ThemeService();
   final TextEditingController _search = TextEditingController();
 
@@ -32,11 +35,18 @@ class HomePage extends StatelessWidget {
           ),
         ),
         actions: [
+          // Tombol Refresh Data
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () => c.fetchObat(), // Panggil fetchObat
+          ),
+          // Tombol Ganti Tema
           IconButton(
             icon: const Icon(Icons.brightness_6, color: Colors.white),
             onPressed: () => themeService.toggle(),
           ),
 
+          // Tombol Logout
           PopupMenuButton(
             icon: const Icon(Icons.person, color: Colors.white),
             offset: const Offset(0, 40),
@@ -100,8 +110,25 @@ class HomePage extends StatelessWidget {
 
             Expanded(
               child: Obx(() {
-                final utama = c.hasil;
-                final rekom = c.rekomendasi;
+                // 2. TAMBAHKAN Loading Indicator
+                if (c.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.teal),
+                  );
+                }
+
+                // 3. GANTI nama variabel
+                //    'c.hasil' -> 'c.filteredObatList'
+                //    'c.rekomendasi' -> 'c.rekomendasiList'
+                final utama = c.filteredObatList;
+                final rekom = c.rekomendasiList;
+
+                // 4. TAMBAHKAN Pengecekan jika data kosong
+                if (utama.isEmpty) {
+                  return const Center(
+                    child: Text("Obat tidak ditemukan."),
+                  );
+                }
 
                 return ListView(
                   children: [
@@ -174,7 +201,6 @@ class HomePage extends StatelessWidget {
       onTap: () {
         Get.to(() => DetailPage(obat: o));
       },
-
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF262626) : Colors.white,
@@ -228,7 +254,8 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 6),
 
             Text(
-              formatHarga(o['harga']),
+              // Tambahkan 'as int? ?? 0' untuk keamanan
+              formatHarga(o['harga'] as int? ?? 0),
               style: TextStyle(
                 color: isDark ? Colors.teal.shade200 : Colors.teal,
                 fontSize: 14,
@@ -237,7 +264,8 @@ class HomePage extends StatelessWidget {
             ),
 
             Text(
-              "Stok: ${o['stok']}",
+              // Tambahkan 'as int? ?? 0' untuk keamanan
+              "Stok: ${o['stok'] as int? ?? 0}",
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white70 : Colors.black54,
