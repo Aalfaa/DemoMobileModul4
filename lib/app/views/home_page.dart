@@ -193,14 +193,13 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // CARD OBAT (FINAL)
   Widget obatCard(BuildContext context, Map<String, dynamic> o) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final String? imageUrl = o['gambar_url']; // langsung pakai field dari database
+
     return GestureDetector(
-      onTap: () {
-        Get.to(() => DetailPage(obat: o));
-      },
+      onTap: () => Get.to(() => DetailPage(obat: o)),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF262626) : Colors.white,
@@ -218,23 +217,27 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // GAMBAR SQUARE DEFAULT
             AspectRatio(
               aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.teal.withOpacity(.18)
-                      : Colors.teal.withOpacity(.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.medical_services_rounded,
-                  size: 40,
-                  color: isDark
-                      ? Colors.white60
-                      : Colors.white70,
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+
+                child: (imageUrl == null || imageUrl.isEmpty)
+                    ? _defaultImage(isDark)
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _defaultImage(isDark),
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.teal,
+                              strokeWidth: 2,
+                            ),
+                          );
+                        },
+                      ),
               ),
             ),
 
@@ -242,19 +245,17 @@ class HomePage extends StatelessWidget {
 
             Text(
               o['nama'],
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 1,            // <— HANYA 1 baris
+              overflow: TextOverflow.ellipsis,   // <— kasih "..."
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
                 color: isDark ? Colors.white : Colors.black87,
               ),
             ),
-
             const SizedBox(height: 6),
 
             Text(
-              // Tambahkan 'as int? ?? 0' untuk keamanan
               formatHarga(o['harga'] as int? ?? 0),
               style: TextStyle(
                 color: isDark ? Colors.teal.shade200 : Colors.teal,
@@ -264,7 +265,6 @@ class HomePage extends StatelessWidget {
             ),
 
             Text(
-              // Tambahkan 'as int? ?? 0' untuk keamanan
               "Stok: ${o['stok'] as int? ?? 0}",
               style: TextStyle(
                 fontSize: 12,
@@ -276,4 +276,16 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _defaultImage(bool isDark) {
+    return Container(
+      color: isDark ? Colors.teal.withOpacity(.18) : Colors.teal.withOpacity(.15),
+      child: Icon(
+        Icons.medical_services_rounded,
+        size: 40,
+        color: isDark ? Colors.white60 : Colors.white70,
+      ),
+    );
+  }
+
 }

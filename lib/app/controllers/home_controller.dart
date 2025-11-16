@@ -32,7 +32,7 @@ class HomeController extends GetxController {
       // Ambil data dari tabel 'obat' kamu
       final response = await supabase
           .from('obat')
-          .select('id, nama, kategori, harga, stok, deskripsi');
+          .select('id, nama, kategori, harga, stok, deskripsi, gambar_url');
 
       // Masukkan data dari Supabase ke master list
       masterObatList.value = List<Map<String, dynamic>>.from(response);
