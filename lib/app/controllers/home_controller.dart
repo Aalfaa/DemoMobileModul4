@@ -18,7 +18,7 @@ class HomeController extends GetxController {
         'deskripsi': 'Pereda demam dan nyeri.',
       },
       {
-        'nama': 'Paracetamol 2',
+        'nama': 'Paracetamol 3',
         'harga': 7000,
         'stok': 15,
         'kategori': 'Demam',
