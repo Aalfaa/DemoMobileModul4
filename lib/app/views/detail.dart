@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../controllers/keranjang_controller.dart';
 import '../utils/format.dart';
+import 'package:get/get.dart';
 
 class DetailPage extends StatelessWidget {
   final Map<String, dynamic> obat;
@@ -35,18 +37,35 @@ class DetailPage extends StatelessWidget {
             // GAMBAR
             AspectRatio(
               aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.teal.withOpacity(.20)
-                      : Colors.teal.withOpacity(.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  Icons.medical_services_rounded,
-                  size: 90,
-                  color: isDark ? Colors.white60 : Colors.white,
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: (obat['gambar_url'] == null || obat['gambar_url'].isEmpty)
+                    ? Container(
+                        color: isDark
+                            ? Colors.teal.withOpacity(.20)
+                            : Colors.teal.withOpacity(.15),
+                        child: Icon(
+                          Icons.medical_services_rounded,
+                          size: 90,
+                          color: isDark ? Colors.white60 : Colors.white,
+                        ),
+                      )
+                    : Image.network(
+                        obat['gambar_url'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) {
+                          return Container(
+                            color: isDark
+                                ? Colors.teal.withOpacity(.20)
+                                : Colors.teal.withOpacity(.15),
+                            child: Icon(
+                              Icons.medical_services_rounded,
+                              size: 90,
+                              color: isDark ? Colors.white60 : Colors.white,
+                            ),
+                          );
+                        },
+                      ),
               ),
             ),
 
@@ -157,7 +176,16 @@ class DetailPage extends StatelessWidget {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            final keranjang = Get.find<KeranjangController>();
+            keranjang.tambah(obat);
+            Get.snackbar(
+              "Berhasil",
+              "Obat ditambahkan ke keranjang",
+              backgroundColor: Colors.teal,
+              colorText: Colors.white,
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
             padding: const EdgeInsets.symmetric(vertical: 16),

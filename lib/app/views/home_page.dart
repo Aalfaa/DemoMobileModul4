@@ -35,26 +35,21 @@ class HomePage extends StatelessWidget {
           ),
         ),
         actions: [
-          // Tombol Refresh Data
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => c.fetchObat(), // Panggil fetchObat
-          ),
-          // Tombol Ganti Tema
+          // Mode terang/gelap
           IconButton(
             icon: const Icon(Icons.brightness_6, color: Colors.white),
             onPressed: () => themeService.toggle(),
           ),
 
-          // Tombol Logout
+          // Keranjang
+          IconButton(
+            icon: const Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () => Get.toNamed('/keranjang'),
+          ),
+          // Avatar
           PopupMenuButton(
             icon: const Icon(Icons.person, color: Colors.white),
-            offset: const Offset(0, 40),
-            color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            itemBuilder: (context) => [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
@@ -70,8 +65,6 @@ class HomePage extends StatelessWidget {
               if (v == 'logout') Get.find<AuthController>().logout();
             },
           ),
-
-          const SizedBox(width: 6),
         ],
       ),
 

@@ -6,6 +6,7 @@ import './app/services/theme_service.dart';
 import './app/routes/app_pages.dart';
 import './app/controllers/auth_controller.dart';
 import './app/providers/supabase_provider.dart';
+import './app/controllers/keranjang_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ void main() async {
 
   // Global AuthController
   Get.put(AuthController(), permanent: true);
+  Get.put(KeranjangController(), permanent: true);
 
   runApp(const MyApp());
 }
