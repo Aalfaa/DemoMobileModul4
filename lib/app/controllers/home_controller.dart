@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/supabase_provider.dart';
 import '../services/hive_service.dart';
 import '../services/connectivity_service.dart';
@@ -20,21 +19,14 @@ class HomeController extends GetxController {
     fetchObat();
   }
 
-  /// ====================================
-  /// FETCH OBAT ONLINE / OFFLINE
-  /// ====================================
   Future<void> fetchObat() async {
     isLoading.value = true;
 
     final conn = Get.find<ConnectivityService>();
     final online = await conn.isOnline();
 
-    // 🔥 cek internet
     print("Status Online: $online");
 
-    // ================================
-    // MODE OFFLINE
-    // ================================
     if (!online) {
       final offline = hive.getObatList();
       masterObatList.assignAll(offline);
@@ -43,13 +35,9 @@ class HomeController extends GetxController {
       return;
     }
 
-    // ================================
-    // MODE ONLINE
-    // ================================
     try {
       final response = await supabase.from('obat').select();
 
-      // simpan ke HIVE
       await hive.saveObatList(response);
 
       final offline = hive.getObatList();
@@ -59,7 +47,6 @@ class HomeController extends GetxController {
     } catch (e) {
       print("FETCH ONLINE ERROR: $e");
 
-      // fallback kalau Supabase error
       final offline = hive.getObatList();
       masterObatList.assignAll(offline);
       filteredObatList.assignAll(offline);
@@ -68,20 +55,15 @@ class HomeController extends GetxController {
     }
   }
 
-  /// ====================================
-  /// FITUR PENCARIAN + REKOMENDASI
-  /// ====================================
   void cari(String keyword) {
     filteredObatList.clear();
     rekomendasiList.clear();
 
-    // reset jika kosong
     if (keyword.isEmpty) {
       filteredObatList.assignAll(masterObatList);
       return;
     }
 
-    // Keyword cocok
     final cocok = masterObatList
         .where((o) =>
             (o['nama'] ?? '')
@@ -92,7 +74,6 @@ class HomeController extends GetxController {
 
     filteredObatList.assignAll(cocok);
 
-    // Jika ada hasil → cari rekomendasi berdasarkan kategori
     if (cocok.isNotEmpty) {
       final kategori = cocok.first['kategori'] ?? '';
 

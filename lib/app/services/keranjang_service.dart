@@ -10,14 +10,21 @@ class KeranjangService {
 
   Future<bool> _isOnline() async => await connectivity.isOnline();
 
+  // ============================================================
+  //   TAMBAH ITEM
+  // ============================================================
   Future<void> tambahItem({
     required String userId,
     required int obatId,
     required Map<String, dynamic> obatData,
   }) async {
     final box = hive.keranjangBox;
+    final online = await _isOnline();
 
-    if (await _isOnline()) {
+    // ============================================
+    // =============== MODE ONLINE =================
+    // ============================================
+    if (online) {
       try {
         final keranjangId = await _getOrCreateKeranjang(userId);
 
@@ -45,29 +52,42 @@ class KeranjangService {
         return;
 
       } catch (e) {
-        print("Gagal online tambahItem → fallback offline");
+        print("Tambah item ONLINE ERROR → OFFLINE mode");
       }
     }
 
+    // ============================================
+    // =============== MODE OFFLINE ================
+    // ============================================
     final key = obatId.toString();
 
     if (box.containsKey(key)) {
       final item = Map<String, dynamic>.from(box.get(key));
-      item['qty'] = (item['qty'] ?? 0) + 1;
+      item['qty'] = (item['qty'] ?? 1) + 1;
       box.put(key, item);
     } else {
       box.put(key, {
-        'id': obatId,
+        'id': key,                         // offline id sementara
+        'obat_id': obatId,
+        'qty': 1,
         'nama': obatData['nama'],
         'harga': obatData['harga'],
-        'qty': 1,
-        'gambar': obatData['localImagePath'] ?? obatData['gambar_url'],
+        'localImagePath': obatData['localImagePath'],
+        'gambar_url': obatData['gambar_url'],
       });
     }
   }
 
+  // ============================================================
+  //   GET KERANJANG (ONLINE / OFFLINE)
+  // ============================================================
   Future<List<Map<String, dynamic>>> getKeranjang(String userId) async {
-    if (await _isOnline()) {
+    final online = await _isOnline();
+
+    // =======================
+    // === MODE ONLINE =======
+    // =======================
+    if (online) {
       try {
         final keranjang = await client
             .from('keranjang')
@@ -77,71 +97,107 @@ class KeranjangService {
 
         if (keranjang == null) return [];
 
-        final data = await client
+        final list = await client
             .from('keranjang_item')
-            .select('id, qty, obat:obat_id (id, nama, harga, gambar_url)')
+            .select('''
+              id,
+              qty,
+              obat:obat_id (
+                id,
+                nama,
+                harga,
+                gambar_url
+              )
+            ''')
             .eq('keranjang_id', keranjang['id']);
 
-        await saveKeranjangHive(data);
-        return List<Map<String, dynamic>>.from(data);
+        await saveKeranjangHive(list);
+        return mapOnlineToUnified(list);
 
       } catch (e) {
-        print("Fetch online gagal → fallback offline");
+        print("Get ONLINE ERROR → fallback offline");
       }
     }
 
-    return hive.getKeranjangList();
+    // =======================
+    // === MODE OFFLINE ======
+    // =======================
+    final offline = hive.getKeranjangList();
+    return mapOfflineToUnified(offline);
   }
 
+  // ============================================================
+  //   SIMPAN KERANJANG ONLINE → HIVE
+  // ============================================================
   Future<void> saveKeranjangHive(List data) async {
     final box = hive.keranjangBox;
     await box.clear();
 
     for (var item in data) {
       final obat = item['obat'];
-      final qty = item['qty'];
 
-      box.put(obat['id'].toString(), {
-        'id': obat['id'],
+      box.put(item['id'].toString(), {
+        'id': item['id'],
+        'obat_id': obat['id'],
+        'qty': item['qty'],
         'nama': obat['nama'],
         'harga': obat['harga'],
-        'qty': qty,
-        'gambar': obat['gambar_url'],
+        'localImagePath': hive.obatBox.get(obat['id'])?['localImagePath'],
+        'gambar_url': obat['gambar_url'],
       });
     }
   }
 
-  Future<void> saveKeranjangList(List data) async {
-    final box = hive.keranjangBox;
-    final obatBox = hive.obatBox;
+  // ============================================================
+  //   OFFLINE → MAP TO UNIFIED FORMAT
+  // ============================================================
+  List<Map<String, dynamic>> mapOfflineToUnified(List data) {
+    return data.map((item) {
+      final obatOffline = hive.obatBox.get(item['obat_id']) ?? {};
 
-    await box.clear();
-
-    for (var item in data) {
-      final obatOnline = item['obat'];
-
-      final obatOffline = obatBox.get(obatOnline['id']);
-
-      final merged = {
+      return {
         'id': item['id'],
+        'obat_id': item['obat_id'],
         'qty': item['qty'],
-        'nama': obatOnline['nama'],
-        'harga': obatOnline['harga'],
-        'localImagePath': obatOffline?['localImagePath'],
-        'gambar_url': obatOnline['gambar_url'],
+        'nama': item['nama'] ?? obatOffline['nama'],
+        'harga': item['harga'] ?? obatOffline['harga'],
+        'localImagePath': item['localImagePath'] ?? obatOffline['localImagePath'],
+        'gambar_url': item['gambar_url'],
       };
-
-      box.put(item['id'].toString(), merged);
-
-      print("KERANJANG SAVE local: ${merged['localImagePath']}, url: ${merged['gambar_url']}");
-    }
+    }).toList();
   }
 
+  // ============================================================
+  //   ONLINE → MAP TO UNIFIED FORMAT
+  // ============================================================
+  List<Map<String, dynamic>> mapOnlineToUnified(List data) {
+    return data.map((item) {
+      final obat = item['obat'];
+      final offline = hive.obatBox.get(obat['id']) ?? {};
+
+      return {
+        'id': item['id'],
+        'obat_id': obat['id'],
+        'qty': item['qty'],
+        'nama': obat['nama'],
+        'harga': obat['harga'],
+        'localImagePath': offline['localImagePath'],
+        'gambar_url': obat['gambar_url'],
+      };
+    }).toList();
+  }
+
+  // ============================================================
+  //   SYNC ONLINE → HIVE
+  // ============================================================
   Future<void> syncFromSupabase(String userId) async {
     final list = await getKeranjang(userId);
     await saveKeranjangHive(list);
   }
 
+  // ============================================================
+  //   DELETE / UPDATE OFFLINE
+  // ============================================================
   Future<void> updateQtyOffline(String id, int qty) async {
     final item = hive.keranjangBox.get(id);
     if (item != null) {
@@ -154,6 +210,9 @@ class KeranjangService {
     hive.keranjangBox.delete(id);
   }
 
+  // ============================================================
+  //   GET / CREATE KERANJANG USER DI SUPABASE
+  // ============================================================
   Future<String> _getOrCreateKeranjang(String userId) async {
     final existing = await client
         .from('keranjang')
