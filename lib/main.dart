@@ -13,23 +13,18 @@ import './app/services/connectivity_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // --- INISIALISASI HIVE ---
   final hive = HiveService();
   await hive.init();
   Get.put(hive, permanent: true);
 
-  // Supabase SELALU di-init (tidak tergantung koneksi di sini)
   await SupabaseProvider.init();
   print("Supabase initialized");
 
-  // SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   Get.put(prefs);
 
-  // Service global
   Get.put(ConnectivityService(), permanent: true);
 
-  // Controller global
   Get.put(AuthController(), permanent: true);
   Get.put(KeranjangController(), permanent: true);
 

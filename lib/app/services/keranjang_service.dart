@@ -10,9 +10,6 @@ class KeranjangService {
 
   Future<bool> _isOnline() async => await connectivity.isOnline();
 
-  /// ===============================
-  ///        TAMBAH ITEM
-  /// ===============================
   Future<void> tambahItem({
     required String userId,
     required int obatId,
@@ -20,7 +17,6 @@ class KeranjangService {
   }) async {
     final box = hive.keranjangBox;
 
-    // ONLINE MODE
     if (await _isOnline()) {
       try {
         final keranjangId = await _getOrCreateKeranjang(userId);
@@ -53,7 +49,6 @@ class KeranjangService {
       }
     }
 
-    // OFFLINE MODE
     final key = obatId.toString();
 
     if (box.containsKey(key)) {
@@ -71,9 +66,6 @@ class KeranjangService {
     }
   }
 
-  /// ===============================
-  ///       GET KERANJANG
-  /// ===============================
   Future<List<Map<String, dynamic>>> getKeranjang(String userId) async {
     if (await _isOnline()) {
       try {
@@ -101,9 +93,6 @@ class KeranjangService {
     return hive.getKeranjangList();
   }
 
-  /// ===============================
-  ///     SYNC ONLINE → HIVE
-  /// ===============================
   Future<void> saveKeranjangHive(List data) async {
     final box = hive.keranjangBox;
     await box.clear();
@@ -131,7 +120,6 @@ class KeranjangService {
     for (var item in data) {
       final obatOnline = item['obat'];
 
-      // Ambil data obat dari Hive (punya localImagePath)
       final obatOffline = obatBox.get(obatOnline['id']);
 
       final merged = {
@@ -139,11 +127,7 @@ class KeranjangService {
         'qty': item['qty'],
         'nama': obatOnline['nama'],
         'harga': obatOnline['harga'],
-
-        // INI YANG KRUSIAL (gambar lokal kalau ada)
         'localImagePath': obatOffline?['localImagePath'],
-
-        // fallback ke URL jika tidak ada
         'gambar_url': obatOnline['gambar_url'],
       };
 
@@ -153,16 +137,11 @@ class KeranjangService {
     }
   }
 
-
   Future<void> syncFromSupabase(String userId) async {
     final list = await getKeranjang(userId);
     await saveKeranjangHive(list);
   }
 
-
-  /// ===============================
-  ///     UPDATE OFFLINE ONLY
-  /// ===============================
   Future<void> updateQtyOffline(String id, int qty) async {
     final item = hive.keranjangBox.get(id);
     if (item != null) {
@@ -175,9 +154,6 @@ class KeranjangService {
     hive.keranjangBox.delete(id);
   }
 
-  /// ===============================
-  ///     CREATE KERANJANG ONLINE
-  /// ===============================
   Future<String> _getOrCreateKeranjang(String userId) async {
     final existing = await client
         .from('keranjang')

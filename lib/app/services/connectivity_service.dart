@@ -6,7 +6,6 @@ class ConnectivityService {
 
   bool lastStatus = false;
 
-  /// Cepat, tidak pakai timeout panjang
   Future<bool> isOnline() async {
     final conn = await _connectivity.checkConnectivity();
 
@@ -15,7 +14,6 @@ class ConnectivityService {
       return false;
     }
 
-    // PING super cepat, bukan lookup()
     try {
       final socket = await Socket.connect("8.8.8.8", 53,
               timeout: const Duration(milliseconds: 200))

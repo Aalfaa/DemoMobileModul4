@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/keranjang_controller.dart';
 import '../utils/format.dart';
 import 'package:get/get.dart';
+import '../services/connectivity_service.dart';
 
 class DetailPage extends StatelessWidget {
   final Map<String, dynamic> obat;
@@ -19,7 +20,6 @@ class DetailPage extends StatelessWidget {
     final textSecondary = isDark ? Colors.white70 : Colors.black54;
     final priceColor = isDark ? Colors.teal.shade200 : Colors.teal.shade700;
 
-    // pilih path gambar: offline (localImagePath) atau online (gambar_url)
     final String? imagePath =
         (obat['localImagePath'] != null && obat['localImagePath'] != "")
             ? obat['localImagePath']
@@ -35,13 +35,11 @@ class DetailPage extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // GAMBAR
             AspectRatio(
               aspectRatio: 1,
               child: ClipRRect(
@@ -49,10 +47,7 @@ class DetailPage extends StatelessWidget {
                 child: _buildImage(imagePath, isDark),
               ),
             ),
-
             const SizedBox(height: 22),
-
-            // NAMA PRODUK
             Text(
               obat['nama'],
               style: TextStyle(
@@ -61,10 +56,7 @@ class DetailPage extends StatelessWidget {
                 color: textPrimary,
               ),
             ),
-
             const SizedBox(height: 6),
-
-            // KATEGORI
             Text(
               "Kategori: ${obat['kategori']}",
               style: TextStyle(
@@ -72,10 +64,7 @@ class DetailPage extends StatelessWidget {
                 color: textSecondary,
               ),
             ),
-
             const SizedBox(height: 12),
-
-            // HARGA
             Text(
               formatHarga(obat['harga']),
               style: TextStyle(
@@ -84,10 +73,7 @@ class DetailPage extends StatelessWidget {
                 color: priceColor,
               ),
             ),
-
             const SizedBox(height: 6),
-
-            // STOK
             Text(
               "Stok tersedia: ${obat['stok']}",
               style: TextStyle(
@@ -95,10 +81,7 @@ class DetailPage extends StatelessWidget {
                 color: textSecondary,
               ),
             ),
-
             const SizedBox(height: 22),
-
-            // DESKRIPSI CARD
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -137,12 +120,10 @@ class DetailPage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 30),
           ],
         ),
       ),
-
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -157,9 +138,24 @@ class DetailPage extends StatelessWidget {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            final conn = Get.find<ConnectivityService>();
+            final online = await conn.isOnline();
+
+            if (!online) {
+              Get.snackbar(
+                "Gagal",
+                "Tidak ada internet",
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+                duration: const Duration(seconds: 1),
+              );
+              return;
+            }
+
             final keranjang = Get.find<KeranjangController>();
             keranjang.tambah(obat);
+
             Get.snackbar(
               "Berhasil",
               "Obat ditambahkan ke keranjang",
@@ -192,7 +188,6 @@ class DetailPage extends StatelessWidget {
       return _defaultImage(isDark);
     }
 
-    // kalau path lokal
     if (path.startsWith("/data") || path.startsWith("/storage")) {
       final file = File(path);
       if (file.existsSync()) {
@@ -201,7 +196,6 @@ class DetailPage extends StatelessWidget {
       return _defaultImage(isDark);
     }
 
-    // kalau url online
     return Image.network(
       path,
       fit: BoxFit.cover,

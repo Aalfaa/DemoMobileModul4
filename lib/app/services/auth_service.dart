@@ -25,7 +25,7 @@ class AuthService {
       );
       return res;
     } on AuthException catch (e) {
-      throw e.message; // error dari supabase lebih spesifik
+      throw e.message; 
     } catch (e) {
       throw "Gagal login. Periksa internet Anda.";
     }

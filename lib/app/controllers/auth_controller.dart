@@ -8,7 +8,6 @@ class AuthController extends GetxController {
   var loading = false.obs;
   var error = ''.obs;
 
-  // SHOW ERROR SNACKBAR
   void showError(String msg) {
     Get.snackbar(
       "Gagal",
@@ -31,7 +30,6 @@ class AuthController extends GetxController {
     );
   }
 
-  // REGISTER
   Future<void> register(
       String email, String password, String username) async {
     loading.value = true;
@@ -56,7 +54,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // LOGIN
   Future<void> login(String email, String password) async {
     loading.value = true;
 
@@ -77,7 +74,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // LOGOUT
   void logout() async {
     try {
       await _auth.logout();

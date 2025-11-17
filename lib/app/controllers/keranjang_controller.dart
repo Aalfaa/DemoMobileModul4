@@ -1,4 +1,3 @@
-// file: app/controllers/keranjang_controller.dart
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/keranjang_service.dart';
@@ -21,9 +20,6 @@ class KeranjangController extends GetxController {
     fetch();
   }
 
-  /// =============================
-  /// GET KERANJANG (ONLINE / OFFLINE)
-  /// =============================
   Future<void> fetch() async {
     loading.value = true;
 
@@ -33,7 +29,6 @@ class KeranjangController extends GetxController {
     final online = await conn.isOnline();
 
     if (!online) {
-      // OFFLINE → Ambil dari Hive
       items.value = hive.getKeranjangList()
           .map((e) => mergeWithObat(normalizeItem(e)))
           .toList();
@@ -42,7 +37,6 @@ class KeranjangController extends GetxController {
     }
 
     try {
-      // 1. Ambil keranjang milik user
       final keranjang = await client
           .from('keranjang')
           .select('id')
@@ -55,16 +49,13 @@ class KeranjangController extends GetxController {
         return;
       }
 
-      // 2. Ambil item berdasarkan keranjang_id
       final result = await client
           .from('keranjang_item')
           .select('id, qty, obat:obat_id (id, nama, harga, gambar_url)')
           .eq('keranjang_id', keranjang['id']);
 
-      // 3. Simpan di Hive
       hive.saveKeranjangList(result);
 
-      // 4. Pakai data lokal yang sudah konsisten
       items.value = hive.getKeranjangList()
           .map((e) => mergeWithObat(normalizeItem(e)))
           .toList();
@@ -77,9 +68,6 @@ class KeranjangController extends GetxController {
     }
   }
 
-  /// =============================
-  /// TAMBAH ITEM (ONLINE / OFFLINE)
-  /// =============================
   Future<void> tambah(Map<String, dynamic> obat) async {
     if (user == null) return;
 
@@ -100,9 +88,6 @@ class KeranjangController extends GetxController {
     }
   }
 
-  /// =============================
-  /// KURANGI QTY
-  /// =============================
   Future<void> kurang(String itemId, int qty) async {
     if (qty <= 1) {
       return hapus(itemId);
@@ -131,9 +116,6 @@ class KeranjangController extends GetxController {
     }
   }
 
-  /// =============================
-  /// HAPUS ITEM
-  /// =============================
   Future<void> hapus(String itemId) async {
     loading.value = true;
 
@@ -155,9 +137,6 @@ class KeranjangController extends GetxController {
     }
   }
 
-  /// =============================
-  /// TOTAL HARGA
-  /// =============================
   int get totalHarga {
     int total = 0;
 
@@ -180,7 +159,7 @@ class KeranjangController extends GetxController {
       "nama": obat['nama'],
       "harga": obat['harga'],
       "localImagePath": obat['localImagePath'],
-      "gambar_url": obat['gambarUrl'],   // dari obat Hive
+      "gambar_url": obat['gambarUrl'],
     };
   }
 
@@ -189,23 +168,16 @@ class KeranjangController extends GetxController {
 
     return {
       ...item,
-
-      // GAMBAR OFFLINE
       "localImagePath": 
           obatOffline != null
               ? obatOffline['localImagePath']
               : item['localImagePath'],
-
-      // GAMBAR ONLINE
       "gambar_url":
           obatOffline != null
               ? obatOffline['gambarUrl']
               : item['gambar_url'],
-
-      // INFO LAIN
       "nama": obatOffline?['nama'] ?? item['nama'],
       "harga": obatOffline?['harga'] ?? item['harga'],
     };
   }
-
 }

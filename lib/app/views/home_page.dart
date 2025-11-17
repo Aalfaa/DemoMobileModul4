@@ -169,7 +169,7 @@ class HomePage extends StatelessWidget {
     final String? imagePath =
       (o['localImagePath'] != null && o['localImagePath']!.isNotEmpty)
           ? o['localImagePath']
-          : (o['gambarUrl'] ?? o['gambar_url']); // fallback ke Hive / Supabase
+          : (o['gambarUrl'] ?? o['gambar_url']); 
     
     print("HIVE IMAGE HOME -> local: ${o['localImagePath']}, url: ${o['gambarUrl']}");
 

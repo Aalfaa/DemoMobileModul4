@@ -31,19 +31,17 @@ class HomeController extends GetxController {
 
     isLoading.value = true;
 
-    final online = await conn.isOnline(); // <-- HARUS CEK DULU
+    final online = await conn.isOnline();
 
     print("Status Online: $online");
 
     if (!online) {
-      // langsung load HIVE, tanpa nunggu apa-apa
       masterObatList.value = hive.getObatList();
       filteredObatList.value = masterObatList;
       isLoading.value = false;
       return;
     }
 
-    // ONLINE → fetch supabase
     try {
       final response = await Supabase.instance.client
           .from('obat')

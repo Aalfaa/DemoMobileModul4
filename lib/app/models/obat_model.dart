@@ -27,7 +27,7 @@ class ObatModel {
       harga: map['harga'],
       stok: map['stok'],
       deskripsi: map['deskripsi'],
-      gambarUrl: map['gambarUrl'],          // <-- Tambahkan
+      gambarUrl: map['gambarUrl'],       
       localImagePath: map['localImagePath'],
     );
   }
@@ -40,7 +40,7 @@ class ObatModel {
       'harga': harga,
       'stok': stok,
       'deskripsi': deskripsi,
-      'gambarUrl': gambarUrl,             // <-- Tambahkan
+      'gambarUrl': gambarUrl,           
       'localImagePath': localImagePath,
     };
   }

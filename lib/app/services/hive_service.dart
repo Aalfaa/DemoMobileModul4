@@ -51,7 +51,7 @@ class HiveService {
         harga: o['harga'],
         stok: o['stok'],
         deskripsi: o['deskripsi'],
-        gambarUrl: o['gambar_url'],       // <-- WAJIB SIMPAN
+        gambarUrl: o['gambar_url'],     
         localImagePath: localPath,
       );
 
@@ -63,7 +63,6 @@ class HiveService {
     return obatBox.values.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
-  // Simpan keranjang offline
   Future<void> saveKeranjangList(List data) async {
     final box = keranjangBox;
     await box.clear();
@@ -79,7 +78,6 @@ class HiveService {
     }
   }
 
-  // Ambil keranjang offline
   List<Map<String, dynamic>> getKeranjangList() {
     return keranjangBox.values
         .map((e) => Map<String, dynamic>.from(e))

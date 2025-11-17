@@ -4,11 +4,29 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/keranjang_controller.dart';
 import '../utils/format.dart';
+import '../services/connectivity_service.dart';
 
 class KeranjangPage extends StatelessWidget {
   KeranjangPage({super.key});
 
   final KeranjangController c = Get.find<KeranjangController>();
+
+  Future<bool> _cekKoneksi() async {
+    final conn = Get.find<ConnectivityService>();
+    final online = await conn.isOnline();
+
+    if (!online) {
+      Get.snackbar(
+        "Offline",
+        "Tidak ada koneksi internet",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 1),
+      );
+      return false;
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,12 +138,13 @@ class KeranjangPage extends StatelessWidget {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () =>
-                            c.kurang(item['id'].toString(), item['qty']),
+                        onPressed: () async {
+                          if (!await _cekKoneksi()) return;
+                          c.kurang(item['id'].toString(), item['qty']);
+                        },
                         icon: const Icon(Icons.remove_circle),
                         color: Colors.red,
                       ),
-
                       Text(
                         "${item['qty']}",
                         style: TextStyle(
@@ -135,8 +154,8 @@ class KeranjangPage extends StatelessWidget {
                       ),
 
                       IconButton(
-                        onPressed: () {
-                          // Tambah lewat controller (online/offline dihandle di service)
+                        onPressed: () async {
+                          if (!await _cekKoneksi()) return;
                           c.tambah(obat);
                         },
                         icon: const Icon(Icons.add_circle),
