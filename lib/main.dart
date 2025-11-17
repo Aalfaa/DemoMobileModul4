@@ -7,18 +7,23 @@ import './app/routes/app_pages.dart';
 import './app/controllers/auth_controller.dart';
 import './app/providers/supabase_provider.dart';
 import './app/controllers/keranjang_controller.dart';
+import './app/services/hive_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✔ Inisialisasi Supabase lewat provider
+  // --- INISIALISASI HIVE ---
+  final hive = HiveService();
+  await hive.init();
+  Get.put(hive, permanent: true);
+
   await SupabaseProvider.init();
 
-  // Theme prefs
+  // SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   Get.put(prefs);
 
-  // Global AuthController
+  // Controller global
   Get.put(AuthController(), permanent: true);
   Get.put(KeranjangController(), permanent: true);
 
@@ -34,6 +39,7 @@ class MyApp extends StatelessWidget {
 
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+
       themeMode: themeService.mode,
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),

@@ -1,56 +1,49 @@
-// File: app/controllers/home_controller.dart
 import 'package:get/get.dart';
-// IMPORT SupabaseProvider
 import '../providers/supabase_provider.dart';
+import '../services/hive_service.dart';
 
 class HomeController extends GetxController {
-  // TAMBAHKAN isLoading untuk status loading
   var isLoading = true.obs;
 
-  // UBAH nama variabel agar lebih jelas
   var masterObatList = <Map<String, dynamic>>[].obs;
   var filteredObatList = <Map<String, dynamic>>[].obs;
   var rekomendasiList = <Map<String, dynamic>>[].obs;
 
-  // DAPATKAN Supabase client
   final supabase = SupabaseProvider.client;
+  final hive = Get.find<HiveService>();
 
   @override
   void onInit() {
     super.onInit();
-    // GANTI isi onInit
-    // Kita tidak isi data statis, kita panggil fetchObat
     fetchObat();
   }
 
-  // BUAT fungsi baru untuk mengambil data
   Future<void> fetchObat() async {
     try {
       isLoading.value = true;
-      rekomendasiList.clear(); // Bersihkan rekomendasi saat refresh
 
-      // Ambil data dari tabel 'obat' kamu
+      // ONLINE MODE
       final response = await supabase
           .from('obat')
           .select('id, nama, kategori, harga, stok, deskripsi, gambar_url');
 
-      // Masukkan data dari Supabase ke master list
       masterObatList.value = List<Map<String, dynamic>>.from(response);
 
-      // Panggil 'cari' dengan string kosong untuk menampilkan semua data
+      // SIMPAN OFFLINE
+      await hive.saveObatList(masterObatList);
+      print("Data obat online berhasil disimpan ke Hive");
+
       cari('');
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal mengambil data obat: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print("OFFLINE MODE: Data diambil dari Hive");
+
+      masterObatList.value = hive.getObatList();
+      cari('');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // SESUAIKAN fungsi cari
   void cari(String keyword) {
     filteredObatList.clear();
     rekomendasiList.clear();
@@ -61,8 +54,7 @@ class HomeController extends GetxController {
     }
 
     final cocok = masterObatList
-        .where((o) =>
-            o['nama'].toLowerCase().contains(keyword.toLowerCase()))
+        .where((o) => o['nama'].toLowerCase().contains(keyword.toLowerCase()))
         .toList();
 
     filteredObatList.assignAll(cocok);
@@ -70,9 +62,11 @@ class HomeController extends GetxController {
     if (cocok.isNotEmpty) {
       final kategori = cocok.first['kategori'];
       final serupa = masterObatList
-          .where((o) =>
-              o['kategori'] == kategori &&
-              !o['nama'].toLowerCase().contains(keyword.toLowerCase()))
+          .where(
+            (o) =>
+                o['kategori'] == kategori &&
+                !o['nama'].toLowerCase().contains(keyword.toLowerCase()),
+          )
           .toList();
 
       rekomendasiList.assignAll(serupa);
