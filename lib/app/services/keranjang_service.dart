@@ -10,9 +10,6 @@ class KeranjangService {
 
   Future<bool> _isOnline() async => await connectivity.isOnline();
 
-  // ============================================================
-  //   TAMBAH ITEM
-  // ============================================================
   Future<void> tambahItem({
     required String userId,
     required int obatId,
@@ -21,16 +18,13 @@ class KeranjangService {
     final box = hive.keranjangBox;
     final online = await _isOnline();
 
-    // ============================================
-    // =============== MODE ONLINE =================
-    // ============================================
     if (online) {
       try {
         final keranjangId = await _getOrCreateKeranjang(userId);
 
         final existing = await client
             .from('keranjang_item')
-            .select()
+            .select('id, qty')
             .eq('keranjang_id', keranjangId)
             .eq('obat_id', obatId)
             .maybeSingle();
@@ -52,22 +46,19 @@ class KeranjangService {
         return;
 
       } catch (e) {
-        print("Tambah item ONLINE ERROR → OFFLINE mode");
+        print("ERROR online tambahItem → gunakan offline");
       }
     }
 
-    // ============================================
-    // =============== MODE OFFLINE ================
-    // ============================================
     final key = obatId.toString();
 
     if (box.containsKey(key)) {
       final item = Map<String, dynamic>.from(box.get(key));
-      item['qty'] = (item['qty'] ?? 1) + 1;
+      item['qty'] = (item['qty'] ?? 0) + 1;
       box.put(key, item);
     } else {
       box.put(key, {
-        'id': key,                         // offline id sementara
+        'id': key, 
         'obat_id': obatId,
         'qty': 1,
         'nama': obatData['nama'],
@@ -78,24 +69,16 @@ class KeranjangService {
     }
   }
 
-  // ============================================================
-  //   GET KERANJANG (ONLINE / OFFLINE)
-  // ============================================================
   Future<List<Map<String, dynamic>>> getKeranjang(String userId) async {
     final online = await _isOnline();
 
-    // =======================
-    // === MODE ONLINE =======
-    // =======================
     if (online) {
       try {
         final keranjang = await client
             .from('keranjang')
             .select('id')
             .eq('user_id', userId)
-            .maybeSingle();
-
-        if (keranjang == null) return [];
+            .single();
 
         final list = await client
             .from('keranjang_item')
@@ -112,29 +95,24 @@ class KeranjangService {
             .eq('keranjang_id', keranjang['id']);
 
         await saveKeranjangHive(list);
+
         return mapOnlineToUnified(list);
 
       } catch (e) {
-        print("Get ONLINE ERROR → fallback offline");
+        print("ERROR getKeranjang ONLINE → fallback offline");
       }
     }
 
-    // =======================
-    // === MODE OFFLINE ======
-    // =======================
     final offline = hive.getKeranjangList();
     return mapOfflineToUnified(offline);
   }
 
-  // ============================================================
-  //   SIMPAN KERANJANG ONLINE → HIVE
-  // ============================================================
   Future<void> saveKeranjangHive(List data) async {
     final box = hive.keranjangBox;
     await box.clear();
 
     for (var item in data) {
-      final obat = item['obat'];
+      final obat = item['obat'] ?? {};
 
       box.put(item['id'].toString(), {
         'id': item['id'],
@@ -148,9 +126,6 @@ class KeranjangService {
     }
   }
 
-  // ============================================================
-  //   OFFLINE → MAP TO UNIFIED FORMAT
-  // ============================================================
   List<Map<String, dynamic>> mapOfflineToUnified(List data) {
     return data.map((item) {
       final obatOffline = hive.obatBox.get(item['obat_id']) ?? {};
@@ -167,37 +142,28 @@ class KeranjangService {
     }).toList();
   }
 
-  // ============================================================
-  //   ONLINE → MAP TO UNIFIED FORMAT
-  // ============================================================
   List<Map<String, dynamic>> mapOnlineToUnified(List data) {
     return data.map((item) {
-      final obat = item['obat'];
-      final offline = hive.obatBox.get(obat['id']) ?? {};
+      final o = item['obat'] ?? {};
+      final offline = hive.obatBox.get(o['id']) ?? {};
 
       return {
         'id': item['id'],
-        'obat_id': obat['id'],
+        'obat_id': o['id'],
         'qty': item['qty'],
-        'nama': obat['nama'],
-        'harga': obat['harga'],
+        'nama': o['nama'],
+        'harga': o['harga'],
         'localImagePath': offline['localImagePath'],
-        'gambar_url': obat['gambar_url'],
+        'gambar_url': o['gambar_url'],
       };
     }).toList();
   }
 
-  // ============================================================
-  //   SYNC ONLINE → HIVE
-  // ============================================================
   Future<void> syncFromSupabase(String userId) async {
     final list = await getKeranjang(userId);
     await saveKeranjangHive(list);
   }
 
-  // ============================================================
-  //   DELETE / UPDATE OFFLINE
-  // ============================================================
   Future<void> updateQtyOffline(String id, int qty) async {
     final item = hive.keranjangBox.get(id);
     if (item != null) {
@@ -210,24 +176,13 @@ class KeranjangService {
     hive.keranjangBox.delete(id);
   }
 
-  // ============================================================
-  //   GET / CREATE KERANJANG USER DI SUPABASE
-  // ============================================================
   Future<String> _getOrCreateKeranjang(String userId) async {
     final existing = await client
         .from('keranjang')
-        .select()
+        .select('id')
         .eq('user_id', userId)
-        .maybeSingle();
-
-    if (existing != null) return existing['id'].toString();
-
-    final inserted = await client
-        .from('keranjang')
-        .insert({'user_id': userId})
-        .select()
         .single();
 
-    return inserted['id'].toString();
+    return existing['id'];
   }
 }
