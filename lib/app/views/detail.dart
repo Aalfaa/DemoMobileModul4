@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../controllers/keranjang_controller.dart';
 import '../utils/format.dart';
@@ -17,6 +18,12 @@ class DetailPage extends StatelessWidget {
     final textPrimary = isDark ? Colors.white : Colors.black87;
     final textSecondary = isDark ? Colors.white70 : Colors.black54;
     final priceColor = isDark ? Colors.teal.shade200 : Colors.teal.shade700;
+
+    // pilih path gambar: offline (localImagePath) atau online (gambar_url)
+    final String? imagePath =
+        (obat['localImagePath'] != null && obat['localImagePath'] != "")
+            ? obat['localImagePath']
+            : obat['gambar_url'];
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -39,33 +46,7 @@ class DetailPage extends StatelessWidget {
               aspectRatio: 1,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: (obat['gambar_url'] == null || obat['gambar_url'].isEmpty)
-                    ? Container(
-                        color: isDark
-                            ? Colors.teal.withOpacity(.20)
-                            : Colors.teal.withOpacity(.15),
-                        child: Icon(
-                          Icons.medical_services_rounded,
-                          size: 90,
-                          color: isDark ? Colors.white60 : Colors.white,
-                        ),
-                      )
-                    : Image.network(
-                        obat['gambar_url'],
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) {
-                          return Container(
-                            color: isDark
-                                ? Colors.teal.withOpacity(.20)
-                                : Colors.teal.withOpacity(.15),
-                            child: Icon(
-                              Icons.medical_services_rounded,
-                              size: 90,
-                              color: isDark ? Colors.white60 : Colors.white,
-                            ),
-                          );
-                        },
-                      ),
+                child: _buildImage(imagePath, isDark),
               ),
             ),
 
@@ -202,6 +183,40 @@ class DetailPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImage(String? path, bool isDark) {
+    if (path == null || path.isEmpty) {
+      return _defaultImage(isDark);
+    }
+
+    // kalau path lokal
+    if (path.startsWith("/data") || path.startsWith("/storage")) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+      return _defaultImage(isDark);
+    }
+
+    // kalau url online
+    return Image.network(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _defaultImage(isDark),
+    );
+  }
+
+  Widget _defaultImage(bool isDark) {
+    return Container(
+      color:
+          isDark ? Colors.teal.withOpacity(.20) : Colors.teal.withOpacity(.15),
+      child: Icon(
+        Icons.medical_services_rounded,
+        size: 90,
+        color: isDark ? Colors.white60 : Colors.white,
       ),
     );
   }

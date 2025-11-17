@@ -19,9 +19,8 @@ class HomePage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF1E1E1E)
-          : const Color(0xFFF6F6F6),
+      backgroundColor:
+          isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF6F6F6),
 
       appBar: AppBar(
         backgroundColor: Colors.teal,
@@ -35,12 +34,10 @@ class HomePage extends StatelessWidget {
             icon: const Icon(Icons.brightness_6, color: Colors.white),
             onPressed: () => themeService.toggle(),
           ),
-
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.white),
             onPressed: () => Get.toNamed('/keranjang'),
           ),
-
           PopupMenuButton(
             icon: const Icon(Icons.person, color: Colors.white),
             itemBuilder: (_) => [
@@ -79,9 +76,8 @@ class HomePage extends StatelessWidget {
                   color: isDark ? Colors.white70 : Colors.grey[700],
                 ),
                 filled: true,
-                fillColor: isDark
-                    ? const Color(0xFF2D2D2D)
-                    : const Color(0xFFECECEC),
+                fillColor:
+                    isDark ? const Color(0xFF2D2D2D) : const Color(0xFFECECEC),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -115,11 +111,11 @@ class HomePage extends StatelessWidget {
                       itemCount: utama.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 0.70,
-                          ),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.70,
+                      ),
                       itemBuilder: (context, i) {
                         return obatCard(context, utama[i]);
                       },
@@ -146,11 +142,11 @@ class HomePage extends StatelessWidget {
                         itemCount: rekom.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 0.70,
-                            ),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.70,
+                        ),
                         itemBuilder: (context, i) {
                           return obatCard(context, rekom[i]);
                         },
@@ -170,11 +166,12 @@ class HomePage extends StatelessWidget {
   Widget obatCard(BuildContext context, Map<String, dynamic> o) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // FINAL: pilih otomatis gambar offline / online
     final String? imagePath =
-        (o['localImagePath'] != null && o['localImagePath'] != "")
-        ? o['localImagePath'] // ⭐ offline
-        : o['gambar_url']; // ⭐ online
+      (o['localImagePath'] != null && o['localImagePath']!.isNotEmpty)
+          ? o['localImagePath']
+          : (o['gambarUrl'] ?? o['gambar_url']); // fallback ke Hive / Supabase
+    
+    print("HIVE IMAGE HOME -> local: ${o['localImagePath']}, url: ${o['gambarUrl']}");
 
     return GestureDetector(
       onTap: () => Get.to(() => DetailPage(obat: o)),
@@ -240,13 +237,11 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  /// --- FINAL: GAMBAR OFFLINE / ONLINE ---
   Widget _buildImage(String? path, bool isDark) {
     if (path == null || path.isEmpty) {
       return _defaultImage(isDark);
     }
 
-    // Jika path adalah file lokal → tampilkan
     if (path.startsWith("/data") || path.startsWith("/storage")) {
       final file = File(path);
       if (file.existsSync()) {
@@ -255,7 +250,6 @@ class HomePage extends StatelessWidget {
       return _defaultImage(isDark);
     }
 
-    // Jika online → tampilkan network image
     return Image.network(
       path,
       fit: BoxFit.cover,
@@ -271,9 +265,8 @@ class HomePage extends StatelessWidget {
 
   Widget _defaultImage(bool isDark) {
     return Container(
-      color: isDark
-          ? Colors.teal.withValues(alpha: .18)
-          : Colors.teal.withValues(alpha: .15),
+      color:
+          isDark ? Colors.teal.withOpacity(.18) : Colors.teal.withOpacity(.15),
       child: Icon(
         Icons.medical_services_rounded,
         size: 40,

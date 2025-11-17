@@ -8,6 +8,7 @@ import './app/controllers/auth_controller.dart';
 import './app/providers/supabase_provider.dart';
 import './app/controllers/keranjang_controller.dart';
 import './app/services/hive_service.dart';
+import './app/services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,11 +18,16 @@ void main() async {
   await hive.init();
   Get.put(hive, permanent: true);
 
+  // Supabase SELALU di-init (tidak tergantung koneksi di sini)
   await SupabaseProvider.init();
+  print("Supabase initialized");
 
   // SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   Get.put(prefs);
+
+  // Service global
+  Get.put(ConnectivityService(), permanent: true);
 
   // Controller global
   Get.put(AuthController(), permanent: true);
@@ -39,11 +45,9 @@ class MyApp extends StatelessWidget {
 
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-
       themeMode: themeService.mode,
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-
       initialRoute: '/splash',
       getPages: AppPages.pages,
     );

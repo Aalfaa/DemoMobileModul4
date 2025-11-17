@@ -1,5 +1,5 @@
 // File: app/views/keranjang_page.dart
-
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/keranjang_controller.dart';
@@ -45,7 +45,17 @@ class KeranjangPage extends StatelessWidget {
           itemCount: c.items.length,
           itemBuilder: (context, i) {
             final item = c.items[i];
-            final obat = item['obat'];
+
+            // Online: item['obat'], Offline: item sendiri
+            final obat = item;
+
+            final String? imagePath =
+              (obat['localImagePath'] != null && obat['localImagePath']!.isNotEmpty)
+                  ? obat['localImagePath']
+                  : (obat['gambarUrl'] ?? obat['gambar_url']); // fallback ke Hive / Supabase
+
+            print("HIVE IMAGE KERANJANG -> local: ${obat['localImagePath']}, url: ${obat['gambarUrl']}");
+            final harga = obat['harga'] ?? item['harga'] ?? 0;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 14),
@@ -69,26 +79,11 @@ class KeranjangPage extends StatelessWidget {
                   // GAMBAR OBAT
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: (obat['gambar_url'] == null ||
-                            obat['gambar_url'].toString().isEmpty)
-                        ? Container(
-                            width: 65,
-                            height: 65,
-                            color: Colors.teal.withOpacity(.15),
-                            child: const Icon(Icons.medical_services, size: 28),
-                          )
-                        : Image.network(
-                            obat['gambar_url'],
-                            width: 65,
-                            height: 65,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 65,
-                              height: 65,
-                              color: Colors.teal.withOpacity(.15),
-                              child: const Icon(Icons.medical_services, size: 28),
-                            ),
-                          ),
+                    child: SizedBox(
+                      width: 65,
+                      height: 65,
+                      child: _buildImage(imagePath),
+                    ),
                   ),
 
                   const SizedBox(width: 12),
@@ -99,7 +94,7 @@ class KeranjangPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          obat['nama'],
+                          obat['nama']?.toString() ?? "-",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -110,7 +105,7 @@ class KeranjangPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          formatHarga(obat['harga']),
+                          formatHarga((harga as num).toInt()),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -126,7 +121,7 @@ class KeranjangPage extends StatelessWidget {
                     children: [
                       IconButton(
                         onPressed: () =>
-                            c.kurang(item['id'], item['qty']),
+                            c.kurang(item['id'].toString(), item['qty']),
                         icon: const Icon(Icons.remove_circle),
                         color: Colors.red,
                       ),
@@ -140,7 +135,10 @@ class KeranjangPage extends StatelessWidget {
                       ),
 
                       IconButton(
-                        onPressed: () => c.tambah(obat),
+                        onPressed: () {
+                          // Tambah lewat controller (online/offline dihandle di service)
+                          c.tambah(obat);
+                        },
                         icon: const Icon(Icons.add_circle),
                         color: Colors.teal,
                       ),
@@ -220,6 +218,35 @@ class KeranjangPage extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildImage(String? path) {
+    if (path == null || path.isEmpty) {
+      return Container(
+        color: Colors.teal.withOpacity(.15),
+        child: const Icon(Icons.medical_services, size: 28),
+      );
+    }
+
+    if (path.startsWith("/data") || path.startsWith("/storage")) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+      return Container(
+        color: Colors.teal.withOpacity(.15),
+        child: const Icon(Icons.medical_services, size: 28),
+      );
+    }
+
+    return Image.network(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        color: Colors.teal.withOpacity(.15),
+        child: const Icon(Icons.medical_services, size: 28),
+      ),
     );
   }
 }

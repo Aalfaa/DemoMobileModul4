@@ -5,6 +5,7 @@ class ObatModel {
   final int harga;
   final int stok;
   final String deskripsi;
+  final String? gambarUrl;
   final String? localImagePath;
 
   ObatModel({
@@ -14,6 +15,7 @@ class ObatModel {
     required this.harga,
     required this.stok,
     required this.deskripsi,
+    this.gambarUrl,
     this.localImagePath,
   });
 
@@ -25,6 +27,7 @@ class ObatModel {
       harga: map['harga'],
       stok: map['stok'],
       deskripsi: map['deskripsi'],
+      gambarUrl: map['gambarUrl'],          // <-- Tambahkan
       localImagePath: map['localImagePath'],
     );
   }
@@ -37,6 +40,7 @@ class ObatModel {
       'harga': harga,
       'stok': stok,
       'deskripsi': deskripsi,
+      'gambarUrl': gambarUrl,             // <-- Tambahkan
       'localImagePath': localImagePath,
     };
   }

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/supabase_provider.dart';
 import '../services/hive_service.dart';
+import '../services/connectivity_service.dart';
 
 class HomeController extends GetxController {
   var isLoading = true.obs;
@@ -18,27 +20,39 @@ class HomeController extends GetxController {
     fetchObat();
   }
 
+  bool sudahLoad = false;
+
   Future<void> fetchObat() async {
+    if (sudahLoad) return;
+    sudahLoad = true;
+
+    final conn = Get.find<ConnectivityService>();
+    final hive = Get.find<HiveService>();
+
+    isLoading.value = true;
+
+    final online = await conn.isOnline(); // <-- HARUS CEK DULU
+
+    print("Status Online: $online");
+
+    if (!online) {
+      // langsung load HIVE, tanpa nunggu apa-apa
+      masterObatList.value = hive.getObatList();
+      filteredObatList.value = masterObatList;
+      isLoading.value = false;
+      return;
+    }
+
+    // ONLINE → fetch supabase
     try {
-      isLoading.value = true;
-
-      // ONLINE MODE
-      final response = await supabase
+      final response = await Supabase.instance.client
           .from('obat')
-          .select('id, nama, kategori, harga, stok, deskripsi, gambar_url');
+          .select();
 
-      masterObatList.value = List<Map<String, dynamic>>.from(response);
-
-      // SIMPAN OFFLINE
-      await hive.saveObatList(masterObatList);
-      print("Data obat online berhasil disimpan ke Hive");
-
-      cari('');
-    } catch (e) {
-      print("OFFLINE MODE: Data diambil dari Hive");
+      hive.saveObatList(response);
 
       masterObatList.value = hive.getObatList();
-      cari('');
+      filteredObatList.value = masterObatList;
     } finally {
       isLoading.value = false;
     }
@@ -54,7 +68,10 @@ class HomeController extends GetxController {
     }
 
     final cocok = masterObatList
-        .where((o) => o['nama'].toLowerCase().contains(keyword.toLowerCase()))
+        .where((o) => o['nama']
+            .toString()
+            .toLowerCase()
+            .contains(keyword.toLowerCase()))
         .toList();
 
     filteredObatList.assignAll(cocok);
@@ -65,7 +82,10 @@ class HomeController extends GetxController {
           .where(
             (o) =>
                 o['kategori'] == kategori &&
-                !o['nama'].toLowerCase().contains(keyword.toLowerCase()),
+                !o['nama']
+                    .toString()
+                    .toLowerCase()
+                    .contains(keyword.toLowerCase()),
           )
           .toList();
 

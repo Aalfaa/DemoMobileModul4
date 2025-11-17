@@ -13,19 +13,25 @@ class HiveService {
     Hive.init(dir.path);
 
     obatBox = await Hive.openBox('obatBox');
-    keranjangBox = await Hive.openBox('keranjangBox'); // ⭐ baru
+    keranjangBox = await Hive.openBox('keranjangBox');
   }
 
   Future<String?> downloadImage(String url, int id) async {
     try {
-      final response = await http.get(Uri.parse(url));
+      final encodedUrl = Uri.encodeFull(url);
+
+      final response = await http.get(Uri.parse(encodedUrl));
       if (response.statusCode == 200) {
         final dir = await getApplicationDocumentsDirectory();
         final file = File('${dir.path}/obat_$id.jpg');
         await file.writeAsBytes(response.bodyBytes);
         return file.path;
+      } else {
+        print("DOWNLOAD ERROR ${response.statusCode} → $url");
       }
-    } catch (_) {}
+    } catch (e) {
+      print("DOWNLOAD EXCEPTION: $e → $url");
+    }
 
     return null;
   }
@@ -33,7 +39,8 @@ class HiveService {
   Future<void> saveObatList(List<Map<String, dynamic>> list) async {
     for (var o in list) {
       String? localPath;
-      if (o['gambar_url'] != null && o['gambar_url'] != '') {
+
+      if (o['gambar_url'] != null && o['gambar_url'] != "") {
         localPath = await downloadImage(o['gambar_url'], o['id']);
       }
 
@@ -44,6 +51,7 @@ class HiveService {
         harga: o['harga'],
         stok: o['stok'],
         deskripsi: o['deskripsi'],
+        gambarUrl: o['gambar_url'],       // <-- WAJIB SIMPAN
         localImagePath: localPath,
       );
 
@@ -54,4 +62,28 @@ class HiveService {
   List<Map<String, dynamic>> getObatList() {
     return obatBox.values.map((e) => Map<String, dynamic>.from(e)).toList();
   }
+
+  // Simpan keranjang offline
+  Future<void> saveKeranjangList(List data) async {
+    final box = keranjangBox;
+    await box.clear();
+
+    for (var item in data) {
+      final obatOnline = item['obat'];
+
+      box.put(item['id'].toString(), {
+        'id': item['id'],
+        'qty': item['qty'],
+        'obat_id': obatOnline['id'],   // SIMPAN OBAT ID SAJA
+      });
+    }
+  }
+
+  // Ambil keranjang offline
+  List<Map<String, dynamic>> getKeranjangList() {
+    return keranjangBox.values
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
 }

@@ -17,7 +17,8 @@ class LoginPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFECECEC),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFECECEC),
 
       body: Center(
         child: SingleChildScrollView(
@@ -91,7 +92,8 @@ class LoginPage extends StatelessWidget {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.teal,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -116,7 +118,9 @@ class LoginPage extends StatelessWidget {
                     "Belum punya akun? Daftar",
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.teal.shade200 : Colors.teal.shade700,
+                      color: isDark
+                          ? Colors.teal.shade200
+                          : Colors.teal.shade700,
                     ),
                   ),
                 ),
@@ -141,7 +145,8 @@ class LoginPage extends StatelessWidget {
       style: TextStyle(color: isDark ? Colors.white : Colors.black),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.grey[700]),
+        labelStyle:
+            TextStyle(color: isDark ? Colors.white70 : Colors.grey[700]),
         prefixIcon: Icon(icon, color: Colors.teal),
         filled: true,
         fillColor: isDark ? const Color(0xFF2A2A2A) : Colors.grey[100],

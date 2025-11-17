@@ -11,10 +11,8 @@ class SplashPage extends StatelessWidget {
       final user = Supabase.instance.client.auth.currentUser;
 
       if (user != null) {
-        // Masih login → langsung masuk home
         Get.offAllNamed('/home');
       } else {
-        // Belum login → ke login page
         Get.offAllNamed('/login');
       }
     });
