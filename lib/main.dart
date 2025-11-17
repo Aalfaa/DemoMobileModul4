@@ -16,7 +16,7 @@ void main() async {
   final hive = HiveService();
   await hive.init();
   Get.put(hive, permanent: true);
-
+  
   await SupabaseProvider.init();
   print("Supabase initialized");
 

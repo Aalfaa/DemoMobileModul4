@@ -20,72 +20,88 @@ class HomeController extends GetxController {
     fetchObat();
   }
 
-  bool sudahLoad = false;
-
+  /// ====================================
+  /// FETCH OBAT ONLINE / OFFLINE
+  /// ====================================
   Future<void> fetchObat() async {
-    if (sudahLoad) return;
-    sudahLoad = true;
-
-    final conn = Get.find<ConnectivityService>();
-    final hive = Get.find<HiveService>();
-
     isLoading.value = true;
 
+    final conn = Get.find<ConnectivityService>();
     final online = await conn.isOnline();
 
+    // 🔥 cek internet
     print("Status Online: $online");
 
+    // ================================
+    // MODE OFFLINE
+    // ================================
     if (!online) {
-      masterObatList.value = hive.getObatList();
-      filteredObatList.value = masterObatList;
+      final offline = hive.getObatList();
+      masterObatList.assignAll(offline);
+      filteredObatList.assignAll(offline);
       isLoading.value = false;
       return;
     }
 
+    // ================================
+    // MODE ONLINE
+    // ================================
     try {
-      final response = await Supabase.instance.client
-          .from('obat')
-          .select();
+      final response = await supabase.from('obat').select();
 
-      hive.saveObatList(response);
+      // simpan ke HIVE
+      await hive.saveObatList(response);
 
-      masterObatList.value = hive.getObatList();
-      filteredObatList.value = masterObatList;
+      final offline = hive.getObatList();
+
+      masterObatList.assignAll(offline);
+      filteredObatList.assignAll(offline);
+    } catch (e) {
+      print("FETCH ONLINE ERROR: $e");
+
+      // fallback kalau Supabase error
+      final offline = hive.getObatList();
+      masterObatList.assignAll(offline);
+      filteredObatList.assignAll(offline);
     } finally {
       isLoading.value = false;
     }
   }
 
+  /// ====================================
+  /// FITUR PENCARIAN + REKOMENDASI
+  /// ====================================
   void cari(String keyword) {
     filteredObatList.clear();
     rekomendasiList.clear();
 
+    // reset jika kosong
     if (keyword.isEmpty) {
       filteredObatList.assignAll(masterObatList);
       return;
     }
 
+    // Keyword cocok
     final cocok = masterObatList
-        .where((o) => o['nama']
-            .toString()
-            .toLowerCase()
-            .contains(keyword.toLowerCase()))
+        .where((o) =>
+            (o['nama'] ?? '')
+                .toString()
+                .toLowerCase()
+                .contains(keyword.toLowerCase()))
         .toList();
 
     filteredObatList.assignAll(cocok);
 
+    // Jika ada hasil → cari rekomendasi berdasarkan kategori
     if (cocok.isNotEmpty) {
-      final kategori = cocok.first['kategori'];
-      final serupa = masterObatList
-          .where(
-            (o) =>
-                o['kategori'] == kategori &&
-                !o['nama']
-                    .toString()
-                    .toLowerCase()
-                    .contains(keyword.toLowerCase()),
-          )
-          .toList();
+      final kategori = cocok.first['kategori'] ?? '';
+
+      final serupa = masterObatList.where((o) {
+        final kat = o['kategori'] ?? '';
+        final nama = o['nama']?.toString().toLowerCase() ?? '';
+
+        return kat == kategori && !nama.contains(keyword.toLowerCase());
+      }).toList();
 
       rekomendasiList.assignAll(serupa);
     }
