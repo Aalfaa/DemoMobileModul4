@@ -59,7 +59,7 @@ class HiveService {
     await keranjangBox.delete(id);
   }
 
-  Future<String?> downloadImage(String? url, String id) async {
+  Future<String?> downloadImage(String? url, int id) async {
     if (url == null || url.isEmpty) return null;
 
     final dir = await getApplicationDocumentsDirectory();
@@ -126,7 +126,7 @@ class HiveService {
         'qty': item['qty'],
         'obat_id': obatOnline['id'],
         'nama': obatOnline['nama'],
-        'harga': obatOnline['harga'],   // FIX TERPENTING
+        'harga': obatOnline['harga'],   
         'gambar_url': obatOnline['gambar_url'],
       });
     }

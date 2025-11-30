@@ -64,7 +64,7 @@ class HomePage extends StatelessWidget {
                     Icon(Icons.wifi_off, color: Colors.white),
                     SizedBox(width: 8),
                     Text(
-                      "Offline mode - menggunakan cache",
+                      "Tidak ada jaringan internet.",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
