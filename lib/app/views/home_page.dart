@@ -6,6 +6,7 @@ import '../services/theme_service.dart';
 import '../utils/format.dart';
 import '../views/detail.dart';
 import '../controllers/auth_controller.dart';
+import '../services/connectivity_service.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key});
@@ -63,6 +64,34 @@ class HomePage extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
+            // Banner OFFLINE yang dipantau pakai Rx lastStatus
+            Obx(() {
+              final conn = Get.find<ConnectivityService>();
+
+              // kalau lastStatus true (online) → jangan tampilkan banner
+              if (conn.lastStatus.value) return const SizedBox.shrink();
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                color: Colors.red.shade400,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.wifi_off, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      "Offline mode - menggunakan cache",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
             TextField(
               controller: _search,
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -167,11 +196,12 @@ class HomePage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final String? imagePath =
-      (o['localImagePath'] != null && o['localImagePath']!.isNotEmpty)
-          ? o['localImagePath']
-          : (o['gambarUrl'] ?? o['gambar_url']); 
-    
-    print("HIVE IMAGE HOME -> local: ${o['localImagePath']}, url: ${o['gambarUrl']}");
+        (o['localImagePath'] != null && o['localImagePath']!.isNotEmpty)
+            ? o['localImagePath']
+            : (o['gambarUrl'] ?? o['gambar_url']);
+
+    print(
+        "HIVE IMAGE HOME -> local: ${o['localImagePath']}, url: ${o['gambarUrl']}");
 
     return GestureDetector(
       onTap: () => Get.to(() => DetailPage(obat: o)),
@@ -256,7 +286,7 @@ class HomePage extends StatelessWidget {
       errorBuilder: (_, __, ___) => _defaultImage(isDark),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
-        return Center(
+        return const Center(
           child: CircularProgressIndicator(color: Colors.teal, strokeWidth: 2),
         );
       },

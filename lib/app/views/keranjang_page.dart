@@ -138,10 +138,12 @@ class KeranjangPage extends StatelessWidget {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () async {
-                          if (!await _cekKoneksi()) return;
-                          c.kurang(item['id'].toString(), item['qty']);
-                        },
+                        onPressed: c.isOnline.value
+                            ? () async {
+                                if (!await _cekKoneksi()) return;
+                                c.kurang(item['id'].toString(), item['qty']);
+                              }
+                            : null,
                         icon: const Icon(Icons.remove_circle),
                         color: Colors.red,
                       ),
@@ -154,12 +156,14 @@ class KeranjangPage extends StatelessWidget {
                       ),
 
                       IconButton(
-                        onPressed: () async {
-                          if (!await _cekKoneksi()) return;
-                          c.tambah(obat);
-                        },
-                        icon: const Icon(Icons.add_circle),
-                        color: Colors.teal,
+                        onPressed: c.isOnline.value
+                            ? () async {
+                                if (!await _cekKoneksi()) return;
+                                c.kurang(item['id'].toString(), item['qty']);
+                              }
+                            : null,
+                        icon: const Icon(Icons.remove_circle),
+                        color: Colors.red,
                       ),
                     ],
                   ),
@@ -219,7 +223,7 @@ class KeranjangPage extends StatelessWidget {
               SizedBox(
                 height: 46,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: c.isOnline.value ? () {} : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
                     padding: const EdgeInsets.symmetric(horizontal: 26),

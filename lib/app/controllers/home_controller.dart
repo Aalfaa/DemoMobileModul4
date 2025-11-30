@@ -12,12 +12,24 @@ class HomeController extends GetxController {
 
   final supabase = SupabaseProvider.client;
   final hive = Get.find<HiveService>();
+  final connectivity = Get.find<ConnectivityService>();
 
   @override
   void onInit() {
     super.onInit();
     fetchObat();
+    hive.obatBox.watch().listen((event) {
+      final updated = hive.getObatList();
+      masterObatList.assignAll(updated);
+      filteredObatList.assignAll(updated);
+    });
+    connectivity.onStatusChange.listen((online) {
+      if (online) {
+        fetchObat();
+      }
+    });
   }
+
 
   Future<void> fetchObat() async {
     isLoading.value = true;

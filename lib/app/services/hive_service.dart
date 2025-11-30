@@ -16,24 +16,75 @@ class HiveService {
     keranjangBox = await Hive.openBox('keranjangBox');
   }
 
-  Future<String?> downloadImage(String url, int id) async {
-    try {
-      final encodedUrl = Uri.encodeFull(url);
+  Future<void> saveSingleObat(Map data) async {
+    // cek apakah gambar berubah
+    String? localPath = await downloadImage(
+      data['gambar_url'],
+      data['id'],
+    );
 
-      final response = await http.get(Uri.parse(encodedUrl));
-      if (response.statusCode == 200) {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/obat_$id.jpg');
-        await file.writeAsBytes(response.bodyBytes);
-        return file.path;
-      } else {
-        print("DOWNLOAD ERROR ${response.statusCode} → $url");
+    final map = {
+      'id': data['id'],
+      'nama': data['nama'],
+      'kategori': data['kategori'],
+      'harga': data['harga'],
+      'stok': data['stok'],
+      'deskripsi': data['deskripsi'],
+      'gambarUrl': data['gambar_url'],    // simpan yang terbaru
+      'localImagePath': localPath,        // update jika berubah
+    };
+
+    await obatBox.put(data['id'], map);
+  }
+
+  Future<void> deleteObatById(int id) async {
+    await obatBox.delete(id);
+  }
+
+  Future<void> saveSingleKeranjangItem(Map data) async {
+    final obatId = data['obat_id'];
+
+    final obatOffline = obatBox.get(obatId) ?? {};
+
+    final map = {
+      'id': data['id'],
+      'qty': data['qty'],
+      'obat_id': obatId,
+    };
+
+    await keranjangBox.put(data['id'].toString(), map);
+  }
+
+  Future<void> deleteKeranjangItemById(int id) async {
+    await keranjangBox.delete(id.toString());
+  }
+
+  Future<String?> downloadImage(String? url, int id) async {
+    if (url == null || url.isEmpty) return null;
+
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/obat_$id.jpg';
+    final file = File(filePath);
+
+    // 1. Cek apakah file sudah ada
+    if (await file.exists()) {
+      final obat = obatBox.get(id);
+
+      // 2. Jika URL gambar TIDAK berubah → gunakan file lama
+      if (obat != null && obat['gambarUrl'] == url) {
+        return filePath; // Tidak download ulang
       }
-    } catch (e) {
-      print("DOWNLOAD EXCEPTION: $e → $url");
     }
 
-    return null;
+    try {
+      // 3. URL berubah atau file belum ada → download ulang
+      final response = await http.get(Uri.parse(url));
+      await file.writeAsBytes(response.bodyBytes);
+      return filePath;
+    } catch (e) {
+      print("Gagal download gambar $url: $e");
+      return null;
+    }
   }
 
   Future<void> saveObatList(List<Map<String, dynamic>> list) async {
@@ -41,7 +92,10 @@ class HiveService {
       String? localPath;
 
       if (o['gambar_url'] != null && o['gambar_url'] != "") {
-        localPath = await downloadImage(o['gambar_url'], o['id']);
+        localPath = await downloadImage(
+            o['gambar_url'],
+            o['id'],
+          );
       }
 
       final model = ObatModel(

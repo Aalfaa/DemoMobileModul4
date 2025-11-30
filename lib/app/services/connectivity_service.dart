@@ -1,30 +1,42 @@
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:get/get.dart';
 
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
 
-  bool lastStatus = false;
+  // jadi RxBool supaya bisa dipantau di Obx
+  final RxBool lastStatus = false.obs;
 
   Future<bool> isOnline() async {
     final conn = await _connectivity.checkConnectivity();
 
     if (conn == ConnectivityResult.none) {
-      lastStatus = false;
+      lastStatus.value = false;
       return false;
     }
 
     try {
-      final socket = await Socket.connect("8.8.8.8", 53,
-              timeout: const Duration(milliseconds: 200))
-          .whenComplete(() {});
+      final socket = await Socket.connect(
+        "8.8.8.8",
+        53,
+        timeout: const Duration(milliseconds: 200),
+      ).whenComplete(() {});
 
       socket.destroy();
-      lastStatus = true;
+      lastStatus.value = true;
       return true;
     } catch (_) {
-      lastStatus = false;
+      lastStatus.value = false;
       return false;
+    }
+  }
+
+  // stream status online/offline, sekaligus update lastStatus lewat isOnline()
+  Stream<bool> get onStatusChange async* {
+    await for (final event in _connectivity.onConnectivityChanged) {
+      final online = await isOnline();
+      yield online;
     }
   }
 }

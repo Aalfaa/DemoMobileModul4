@@ -6,9 +6,9 @@ import './app/services/theme_service.dart';
 import './app/routes/app_pages.dart';
 import './app/controllers/auth_controller.dart';
 import './app/providers/supabase_provider.dart';
-import './app/controllers/keranjang_controller.dart';
 import './app/services/hive_service.dart';
 import './app/services/connectivity_service.dart';
+import './app/services/keranjang_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,14 +20,14 @@ void main() async {
   await SupabaseProvider.init();
   print("Supabase initialized");
 
+  SupabaseProvider.initRealtime(hive);
+
   final prefs = await SharedPreferences.getInstance();
   Get.put(prefs);
 
   Get.put(ConnectivityService(), permanent: true);
-
+  Get.put(KeranjangService(), permanent: true);
   Get.put(AuthController(), permanent: true);
-  Get.put(KeranjangController(), permanent: true);
-
   runApp(const MyApp());
 }
 
