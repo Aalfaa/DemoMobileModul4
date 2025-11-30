@@ -1,12 +1,15 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthController extends GetxController {
   final AuthService _auth = AuthService();
 
   var loading = false.obs;
   var error = ''.obs;
+
+  String? get userEmail => Supabase.instance.client.auth.currentUser?.email;
 
   void showError(String msg) {
     Get.snackbar(

@@ -5,7 +5,6 @@ import '../controllers/home_controller.dart';
 import '../services/theme_service.dart';
 import '../utils/format.dart';
 import '../views/detail.dart';
-import '../controllers/auth_controller.dart';
 import '../services/connectivity_service.dart';
 
 class HomePage extends StatelessWidget {
@@ -39,23 +38,9 @@ class HomePage extends StatelessWidget {
             icon: const Icon(Icons.shopping_cart, color: Colors.white),
             onPressed: () => Get.toNamed('/keranjang'),
           ),
-          PopupMenuButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.red.shade400),
-                    const SizedBox(width: 8),
-                    const Text("Logout"),
-                  ],
-                ),
-              ),
-            ],
-            onSelected: (v) {
-              if (v == 'logout') Get.find<AuthController>().logout();
-            },
+          IconButton(
+            icon: const Icon(Icons.location_on, color: Colors.white),
+            onPressed: () => Get.toNamed('/location'),
           ),
         ],
       ),

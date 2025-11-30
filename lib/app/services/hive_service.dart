@@ -44,8 +44,6 @@ class HiveService {
   Future<void> saveSingleKeranjangItem(Map data) async {
     final obatId = data['obat_id'];
 
-    final obatOffline = obatBox.get(obatId) ?? {};
-
     final map = {
       'id': data['id'],
       'qty': data['qty'],

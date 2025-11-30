@@ -9,9 +9,12 @@ import './app/providers/supabase_provider.dart';
 import './app/services/hive_service.dart';
 import './app/services/connectivity_service.dart';
 import './app/services/keranjang_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Geolocator.requestPermission();
 
   final hive = HiveService();
   await hive.init();
