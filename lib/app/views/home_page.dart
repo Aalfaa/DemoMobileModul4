@@ -27,7 +27,7 @@ class HomePage extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: const Text(
           "Apotek Alfina Rizqy",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         actions: [
           IconButton(
@@ -49,11 +49,9 @@ class HomePage extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            // Banner OFFLINE yang dipantau pakai Rx lastStatus
             Obx(() {
               final conn = Get.find<ConnectivityService>();
 
-              // kalau lastStatus true (online) → jangan tampilkan banner
               if (conn.lastStatus.value) return const SizedBox.shrink();
 
               return Container(
@@ -123,12 +121,11 @@ class HomePage extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: utama.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
-                        childAspectRatio: 0.70,
+                        childAspectRatio: 0.69,
                       ),
                       itemBuilder: (context, i) {
                         return obatCard(context, utama[i]);
@@ -154,12 +151,11 @@ class HomePage extends StatelessWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: rekom.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.70,
+                          childAspectRatio: 0.68,
                         ),
                         itemBuilder: (context, i) {
                           return obatCard(context, rekom[i]);
@@ -184,9 +180,6 @@ class HomePage extends StatelessWidget {
         (o['localImagePath'] != null && o['localImagePath']!.isNotEmpty)
             ? o['localImagePath']
             : (o['gambarUrl'] ?? o['gambar_url']);
-
-    print(
-        "HIVE IMAGE HOME -> local: ${o['localImagePath']}, url: ${o['gambarUrl']}");
 
     return GestureDetector(
       onTap: () => Get.to(() => DetailPage(obat: o)),

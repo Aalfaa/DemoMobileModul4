@@ -65,7 +65,6 @@ class LocationPage extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // PANEL DATA
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -88,7 +87,6 @@ class LocationPage extends StatelessWidget {
                               fontWeight: FontWeight.bold, color: Colors.blue),
                         ),
 
-                        // SPEED KHUSUS DINAMIS
                         if (c.mode.value == "Dinamis") ...[
                           const SizedBox(height: 8),
                           Text(
@@ -105,7 +103,6 @@ class LocationPage extends StatelessWidget {
               ),
             ),
 
-            // MAP
             Expanded(
               child: FlutterMap(
                 mapController: c.mapController,
@@ -115,7 +112,6 @@ class LocationPage extends StatelessWidget {
                   initialZoom: 17,
                 ),
                 children: [
-                  // OPENSTREETMAP ORIGINAL
                   TileLayer(
                     urlTemplate:
                         "https://tile.openstreetmap.org/{z}/{x}/{y}.png",

@@ -17,7 +17,6 @@ class HiveService {
   }
 
   Future<void> saveSingleObat(Map data) async {
-    // cek apakah gambar berubah
     String? localPath = await downloadImage(
       data['gambar_url'],
       data['id'],
@@ -30,14 +29,14 @@ class HiveService {
       'harga': data['harga'],
       'stok': data['stok'],
       'deskripsi': data['deskripsi'],
-      'gambarUrl': data['gambar_url'],    // simpan yang terbaru
-      'localImagePath': localPath,        // update jika berubah
+      'gambarUrl': data['gambar_url'],   
+      'localImagePath': localPath,       
     };
 
     await obatBox.put(data['id'], map);
   }
 
-  Future<void> deleteObatById(int id) async {
+  Future<void> deleteObatById(String id) async {
     await obatBox.delete(id);
   }
 
@@ -50,32 +49,32 @@ class HiveService {
       'obat_id': obatId,
     };
 
-    await keranjangBox.put(data['id'].toString(), map);
+    map.forEach((key, value) {
+      print("$key → value: $value  | type: ${value.runtimeType}");
+    });
+    await keranjangBox.put(data['id'], map);
   }
 
-  Future<void> deleteKeranjangItemById(int id) async {
-    await keranjangBox.delete(id.toString());
+  Future<void> deleteKeranjangItemById(String id) async {
+    await keranjangBox.delete(id);
   }
 
-  Future<String?> downloadImage(String? url, int id) async {
+  Future<String?> downloadImage(String? url, String id) async {
     if (url == null || url.isEmpty) return null;
 
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/obat_$id.jpg';
     final file = File(filePath);
 
-    // 1. Cek apakah file sudah ada
     if (await file.exists()) {
       final obat = obatBox.get(id);
 
-      // 2. Jika URL gambar TIDAK berubah → gunakan file lama
       if (obat != null && obat['gambarUrl'] == url) {
-        return filePath; // Tidak download ulang
+        return filePath; 
       }
     }
 
     try {
-      // 3. URL berubah atau file belum ada → download ulang
       final response = await http.get(Uri.parse(url));
       await file.writeAsBytes(response.bodyBytes);
       return filePath;
@@ -122,10 +121,13 @@ class HiveService {
     for (var item in data) {
       final obatOnline = item['obat'];
 
-      box.put(item['id'].toString(), {
+      box.put(item['id'], {
         'id': item['id'],
         'qty': item['qty'],
-        'obat_id': obatOnline['id'],   // SIMPAN OBAT ID SAJA
+        'obat_id': obatOnline['id'],
+        'nama': obatOnline['nama'],
+        'harga': obatOnline['harga'],   // FIX TERPENTING
+        'gambar_url': obatOnline['gambar_url'],
       });
     }
   }

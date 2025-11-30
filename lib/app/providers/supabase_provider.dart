@@ -12,11 +12,8 @@ class SupabaseProvider {
   static void initRealtime(HiveService hive) {
     final client = Supabase.instance.client;
 
-    print("🔥 Supabase Realtime aktif");
+    print("Supabase Realtime aktif");
 
-    // ============================================================
-    // 1. REALTIME UNTUK TABLE OBAT
-    // ============================================================
     client.channel('public:obat')
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -38,9 +35,6 @@ class SupabaseProvider {
       )
       .subscribe();
 
-    // ============================================================
-    // 2. REALTIME UNTUK TABLE KERANJANG_ITEM
-    // ============================================================
     client.channel('public:keranjang_item')
       .onPostgresChanges(
         event: PostgresChangeEvent.all,

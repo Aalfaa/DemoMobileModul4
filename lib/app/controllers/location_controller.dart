@@ -5,25 +5,20 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class LocationController extends GetxController {
-  // MODE ────────────────────────────────────────
-  final RxString mode = 'Statis'.obs; // Statis / Dinamis
-  final RxString provider = 'Network'.obs; // GPS / Network
+  final RxString mode = 'Statis'.obs;
+  final RxString provider = 'Network'.obs;
 
-  // DATA LOKASI ─────────────────────────────────
   final RxDouble latitude = 0.0.obs;
   final RxDouble longitude = 0.0.obs;
   final RxDouble accuracy = 0.0.obs;
   final RxString timestamp = ''.obs;
 
-  // SPEED (khusus Dinamis)
   final RxDouble speed = 0.0.obs;
 
-  // FIRST FIX TIMER ─────────────────────────────
   final RxString firstFixText = 'Sedang mengambil lokasi terbaru...'.obs;
   bool firstFixDone = false;
   late Stopwatch stopwatch;
 
-  // MAP ─────────────────────────────────────────
   final mapController = MapController();
 
   StreamSubscription<Position>? _stream;
@@ -45,16 +40,15 @@ class LocationController extends GetxController {
 
   Future<void> initPermission() async {
     await Geolocator.requestPermission();
+    await Geolocator.checkPermission();
   }
 
-  // FIRST FIX RESET ─────────────────────────────
   void resetFirstFix() {
     firstFixDone = false;
     firstFixText.value = "Sedang mengambil lokasi terbaru...";
     stopwatch = Stopwatch()..start();
   }
 
-  // MODE CHANGE ─────────────────────────────────
   void startTracking() {
     _stream?.cancel();
     _timer?.cancel();
@@ -68,12 +62,10 @@ class LocationController extends GetxController {
     }
   }
 
-  // MODE STATIS → update tiap 2 detik
   void _startStatic() {
     _timer = Timer.periodic(const Duration(seconds: 2), (_) => fetchOnce());
   }
 
-  // MODE DINAMIS → realtime stream
   void _startDynamic() {
     bool isGps = provider.value == "GPS";
 
@@ -87,7 +79,6 @@ class LocationController extends GetxController {
     });
   }
 
-  // FETCH SEKALI UNTUK MODE STATIS
   Future<void> fetchOnce() async {
     try {
       bool isGps = provider.value == "GPS";
@@ -103,30 +94,25 @@ class LocationController extends GetxController {
     }
   }
 
-  // FORMAT TIMESTAMP ────────────────────────────
   String formatTimestamp(DateTime dt) {
     return "${dt.hour}j ${dt.minute}m ${dt.second}d ${dt.millisecond}s";
   }
 
-  // FORMAT SPEED (m/s → km/jam)
   String formatSpeed(double s) {
     double kmh = s * 3.6;
     return "${kmh.toStringAsFixed(1)} km/jam";
   }
 
-  // UPDATE DATA & MAP ───────────────────────────
   void updateLocation(Position pos) {
     latitude.value = pos.latitude;
     longitude.value = pos.longitude;
     accuracy.value = double.parse(pos.accuracy.toStringAsFixed(1));
     timestamp.value = formatTimestamp(DateTime.now());
 
-    // SPEED (khusus mode dinamis)
     if (mode.value == "Dinamis") {
-      speed.value = pos.speed; // m/s
+      speed.value = pos.speed;
     }
 
-    // FIRST FIX
     if (!firstFixDone) {
       firstFixDone = true;
       stopwatch.stop();
@@ -134,7 +120,6 @@ class LocationController extends GetxController {
           "Kecepatan Lokasi Pertama: ${stopwatch.elapsedMilliseconds} ms";
     }
 
-    // Update map
     mapController.move(
       LatLng(pos.latitude, pos.longitude),
       17,

@@ -5,7 +5,7 @@ class RiwayatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: Text("Halaman Riwayat"),
+        child: Text("Halaman Riwayat (Coming Soon)"),
       ),
     );
   }

@@ -20,7 +20,6 @@ class ProfilePage extends StatelessWidget {
 
           const SizedBox(height: 40),
 
-          // AVATAR & EMAIL
           Column(
             children: [
               CircleAvatar(
@@ -48,7 +47,6 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
 
-          // MENU COMING SOON
           menuItem(
             icon: Icons.settings,
             title: "Pengaturan",
@@ -76,7 +74,6 @@ class ProfilePage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // LOGOUT — SATU ROW DENGAN MENU LAIN
           menuItem(
             icon: Icons.logout,
             title: "Logout",
@@ -117,7 +114,6 @@ class ProfilePage extends StatelessWidget {
           tileColor: Colors.transparent,
         ),
 
-        // Garis pemisah antar menu
         const Divider(height: 1),
       ],
     );

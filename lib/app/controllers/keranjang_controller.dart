@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/keranjang_service.dart';
@@ -13,12 +14,13 @@ class KeranjangController extends GetxController {
   var loading = false.obs;
   var items = <Map<String, dynamic>>[].obs;
 
-  // Optimasi performa
   bool _fetchBusy = false;
+  bool _updatingHive = false;
   DateTime? _lastFetch;
   List<Map<String, dynamic>> _cachedKeranjang = [];
 
-  // Online indicator (untuk UX Step 8)
+  Timer? _hiveDebounce;
+
   var isOnline = true.obs;
 
   User? get user => client.auth.currentUser;
@@ -27,35 +29,31 @@ class KeranjangController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Ambil data awal
     fetch();
 
-    // Hive realtime → update UI
     hive.keranjangBox.watch().listen((event) {
-      _cachedKeranjang.clear();
-      items.assignAll(getKeranjangNormalized());
+      if (_updatingHive) return;
+
+      if (_hiveDebounce?.isActive ?? false) _hiveDebounce!.cancel();
+      _hiveDebounce = Timer(Duration(milliseconds: 120), () {
+        _cachedKeranjang.clear();
+        items.assignAll(getKeranjangNormalized());
+      });
     });
 
-    // Monitor internet status
     connectivity.onStatusChange.listen((online) {
       isOnline.value = online;
-      if (online) {
-        fetch(); // sync ulang jika kembali online
-      }
+      if (online) fetch();
     });
   }
 
-  // ============================================================
-  // FETCH DATA (offline read, online sync)
-  // ============================================================
   Future<void> fetch() async {
-    // anti double fetch / debounce
     if (_fetchBusy) return;
 
     final now = DateTime.now();
     if (_lastFetch != null &&
         now.difference(_lastFetch!) < Duration(milliseconds: 500)) {
-      return; 
+      return;
     }
 
     _fetchBusy = true;
@@ -65,21 +63,15 @@ class KeranjangController extends GetxController {
     final online = await connectivity.isOnline();
 
     if (!online) {
-      // OFFLINE MODE → baca hive saja
-      items.value = hive.getKeranjangList()
-          .map((e) => mergeWithObat(normalizeItem(e)))
-          .toList();
-
+      items.assignAll(getKeranjangNormalized());
       _fetchBusy = false;
       loading.value = false;
       return;
     }
 
-    // ONLINE MODE → ambil dari Supabase lalu simpan ke Hive
     try {
       if (user == null) {
-        items.value = [];
-        loading.value = false;
+        items.clear();
         return;
       }
 
@@ -90,8 +82,7 @@ class KeranjangController extends GetxController {
           .maybeSingle();
 
       if (keranjang == null) {
-        items.value = [];
-        loading.value = false;
+        items.clear();
         return;
       }
 
@@ -100,37 +91,48 @@ class KeranjangController extends GetxController {
           .select('id, qty, obat:obat_id (id, nama, harga, gambar_url)')
           .eq('keranjang_id', keranjang['id']);
 
+      _updatingHive = true;
       await hive.saveKeranjangList(result);
+      _updatingHive = false;
 
       _cachedKeranjang.clear();
       items.assignAll(getKeranjangNormalized());
-
     } catch (e) {
-      print("FETCH ONLINE ERROR: $e");
-
-      items.value = hive.getKeranjangList()
-          .map((e) => mergeWithObat(normalizeItem(e)))
-          .toList();
-
+      print("FETCH ERROR: $e");
+      items.assignAll(getKeranjangNormalized());
     } finally {
       _fetchBusy = false;
       loading.value = false;
     }
   }
 
-  // ============================================================
-  // TAMBAH ITEM (online only)
-  // ============================================================
+  Future<void> tambahQty(String itemId, int qty) async {
+    if (!await connectivity.isOnline()) {
+      Get.snackbar("Offline", "Tidak dapat menambah jumlah saat offline");
+      return;
+    }
+
+    loading.value = true;
+    try {
+      await client
+          .from('keranjang_item')
+          .update({'qty': qty + 1})
+          .eq('id', itemId);
+      await fetch();
+    } finally {
+      loading.value = false;
+    }
+  }
+
   Future<void> tambah(Map<String, dynamic> obat) async {
-    final online = await connectivity.isOnline();
-    if (!online) {
+    if (!await connectivity.isOnline()) {
       Get.snackbar("Offline", "Tidak dapat menambah item saat offline");
       return;
     }
+
     if (user == null) return;
 
     loading.value = true;
-
     try {
       await keranjangService.tambahItem(
         userId: user!.id,
@@ -140,25 +142,19 @@ class KeranjangController extends GetxController {
 
       await fetch();
     } catch (e) {
-      print("Gagal tambah item: $e");
+      print("Gagal tambah: $e");
     } finally {
       loading.value = false;
     }
   }
 
-  // ============================================================
-  // KURANGI ITEM (qty - 1)
-  // ============================================================
   Future<void> kurang(String itemId, int qty) async {
-    final online = await connectivity.isOnline();
-    if (!online) {
+    if (!await connectivity.isOnline()) {
       Get.snackbar("Offline", "Tidak dapat mengubah jumlah saat offline");
       return;
     }
 
-    if (qty <= 1) {
-      return hapus(itemId);
-    }
+    if (qty <= 1) return hapus(itemId);
 
     loading.value = true;
 
@@ -176,12 +172,8 @@ class KeranjangController extends GetxController {
     }
   }
 
-  // ============================================================
-  // HAPUS ITEM (online only)
-  // ============================================================
   Future<void> hapus(String itemId) async {
-    final online = await connectivity.isOnline();
-    if (!online) {
+    if (!await connectivity.isOnline()) {
       Get.snackbar("Offline", "Tidak dapat menghapus item saat offline");
       return;
     }
@@ -190,6 +182,11 @@ class KeranjangController extends GetxController {
 
     try {
       await client.from('keranjang_item').delete().eq('id', itemId);
+
+      _updatingHive = true;
+      await hive.deleteKeranjangItemById(itemId);
+      _updatingHive = false;
+
       await fetch();
     } catch (e) {
       print("Gagal hapus: $e");
@@ -198,71 +195,50 @@ class KeranjangController extends GetxController {
     }
   }
 
-  // ============================================================
-  // TOTAL HARGA
-  // ============================================================
   int get totalHarga {
     int total = 0;
-
     for (var item in items) {
       final harga = (item['harga'] ?? 0) as num;
       final qty = (item['qty'] ?? 1) as num;
       total += harga.toInt() * qty.toInt();
     }
-
     return total;
   }
 
-  // ============================================================
-  // NORMALIZE (ambil data obat dari Hive)
-  // ============================================================
   Map<String, dynamic> normalizeItem(Map<String, dynamic> item) {
-    final obatMap = hive.obatBox.get(item['obat_id']);
-    final obat = obatMap != null ? Map<String, dynamic>.from(obatMap) : {};
+    final obat = hive.obatBox.get(item['obat_id']);
+    final o = obat != null ? Map<String, dynamic>.from(obat) : {};
 
     return {
       "id": item['id'],
       "obat_id": item['obat_id'],
       "qty": item['qty'],
-      "nama": obat['nama'],
-      "harga": obat['harga'],
-      "gambarUrl": obat['gambarUrl'] ?? item['gambar_url'],
-      "localImagePath": obat['localImagePath'],
+      "nama": o['nama'],
+      "harga": o['harga'],
+      "gambarUrl": o['gambarUrl'] ?? item['gambar_url'],
+      "localImagePath": o['localImagePath'],
     };
   }
 
-  // ============================================================
-  // MERGE (fallback jika data hive belum lengkap)
-  // ============================================================
   Map<String, dynamic> mergeWithObat(Map<String, dynamic> item) {
-    final obatOffline = hive.obatBox.get(item['obat_id']);
+    final o = hive.obatBox.get(item['obat_id']);
 
     return {
       ...item,
-      "gambarUrl":
-          obatOffline?['gambarUrl'] ?? item['gambarUrl'] ?? item['gambar_url'],
-      "localImagePath":
-          obatOffline?['localImagePath'] ?? item['localImagePath'],
-      "nama": obatOffline?['nama'] ?? item['nama'],
-      "harga": obatOffline?['harga'] ?? item['harga'],
+      "nama": o?['nama'] ?? item['nama'],
+      "harga": o?['harga'] ?? item['harga'],
+      "gambarUrl": o?['gambarUrl'] ?? item['gambarUrl'],
+      "localImagePath": o?['localImagePath'] ?? item['localImagePath'],
     };
   }
 
-  // ============================================================
-  // HIVE list caching (optimasi performa)
-  // ============================================================
   List<Map<String, dynamic>> getKeranjangNormalized() {
-    if (_cachedKeranjang.isNotEmpty) {
-      return _cachedKeranjang;
-    }
+    if (_cachedKeranjang.isNotEmpty) return _cachedKeranjang;
 
     final raw = hive.getKeranjangList();
-    _cachedKeranjang = raw.map((e) => mergeWithObat(normalizeItem(e))).toList();
+    _cachedKeranjang =
+        raw.map((e) => mergeWithObat(normalizeItem(e))).toList();
 
     return _cachedKeranjang;
   }
-
-  // ============================================================
-  // Clean up memory
-  // ============================================================
 }

@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
 
-  // jadi RxBool supaya bisa dipantau di Obx
   final RxBool lastStatus = false.obs;
 
   Future<bool> isOnline() async {
@@ -32,7 +31,6 @@ class ConnectivityService {
     }
   }
 
-  // stream status online/offline, sekaligus update lastStatus lewat isOnline()
   Stream<bool> get onStatusChange async* {
     await for (final event in _connectivity.onConnectivityChanged) {
       final online = await isOnline();
