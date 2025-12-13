@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "69945311688",
+    "project_id": "mobile-modul-6-85d75",
+    "storage_bucket": "mobile-modul-6-85d75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69945311688:android:e4019f2224bd174cb140fd",
+        "android_client_info": {
+          "package_name": "com.example.demo3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBznfIp7QjTBbKKEPH1Qiq_kQchrsoZVmY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69945311688:android:7f213d4ea88b7d7eb140fd",
+        "android_client_info": {
+          "package_name": "com.google.firebase.messaging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBznfIp7QjTBbKKEPH1Qiq_kQchrsoZVmY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69945311688:android:5b8093e11b8260dfb140fd",
+        "android_client_info": {
+          "package_name": "com.mobile.modul6"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBznfIp7QjTBbKKEPH1Qiq_kQchrsoZVmY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

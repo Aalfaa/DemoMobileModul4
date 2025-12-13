@@ -13,7 +13,7 @@ class ProfilePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor:
-          isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF6F6F6),
+          isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF6F6F6),
 
       body: ListView(
         children: [

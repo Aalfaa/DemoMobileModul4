@@ -1,3 +1,6 @@
+import 'package:demo3/app/controllers/notification_controller.dart';
+import 'package:demo3/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +26,10 @@ void main() async {
   await SupabaseProvider.init();
   print("Supabase initialized");
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   SupabaseProvider.initRealtime(hive);
 
   final prefs = await SharedPreferences.getInstance();
@@ -31,6 +38,7 @@ void main() async {
   Get.put(ConnectivityService(), permanent: true);
   Get.put(KeranjangService(), permanent: true);
   Get.put(AuthController(), permanent: true);
+  Get.put(NotificationController(), permanent: true);
   runApp(const MyApp());
 }
 
