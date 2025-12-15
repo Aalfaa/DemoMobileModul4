@@ -57,5 +57,6 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       getPages: AppPages.pages,
     );
+    
   }
 }

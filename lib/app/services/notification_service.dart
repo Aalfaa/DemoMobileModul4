@@ -25,20 +25,16 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onLocalTap,
     );
 
-    // FOREGROUND
     FirebaseMessaging.onMessage.listen(_onForeground);
 
-    // BACKGROUND
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
 
-    // TERMINATED
     final initial = await _fcm.getInitialMessage();
     if (initial != null) {
       _handleMessage(initial);
     }
   }
 
-  // ================= FOREGROUND =================
   void _onForeground(RemoteMessage message) {
     print('FCM FOREGROUND PAYLOAD: ${message.data}');
 
@@ -60,20 +56,17 @@ class NotificationService {
     );
   }
 
-  // ================= TAP LOCAL =================
   void _onLocalTap(NotificationResponse response) {
     if (response.payload == null) return;
     final data = jsonDecode(response.payload!);
     _navigateByPayload(data);
   }
 
-  // ================= TAP SYSTEM =================
   void _handleMessage(RemoteMessage message) {
     print('FCM TAP PAYLOAD: ${message.data}');
     _navigateByPayload(message.data);
   }
 
-  // ================= NAVIGATION =================
   Future<void> _navigateByPayload(Map<String, dynamic> data) async {
     if (data['type'] != 'restock') return;
 
